@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.locationtech.geogig.api.ObjectId;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.ConfigDatabase;
 import org.locationtech.geogig.storage.GraphDatabase;
@@ -40,7 +41,11 @@ public class MongoGraphDatabase implements GraphDatabase {
     private final ConfigDatabase config;
 
     private MongoClient client;
+
     private DBCollection collection;
+
+    public static final VersionedFormat VERSION = new VersionedFormat(MongoStorageProvider.NAME,
+            MongoStorageProvider.VERSION);
 
     @Inject
     public MongoGraphDatabase(final MongoConnectionManager manager, final ConfigDatabase config) {
@@ -50,12 +55,14 @@ public class MongoGraphDatabase implements GraphDatabase {
 
     @Override
     public void configure() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.GRAPH.configure(config, "mongodb", "0.1");
+        RepositoryConnectionException.StorageType.GRAPH.configure(config, VERSION.getFormat(),
+                VERSION.getVersion());
     }
 
     @Override
     public void checkConfig() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.GRAPH.verify(config, "mongodb", "0.1");
+        RepositoryConnectionException.StorageType.GRAPH.verify(config, VERSION.getFormat(),
+                VERSION.getVersion());
     }
 
     private class MongoNode extends GraphNode {
@@ -84,18 +91,19 @@ public class MongoGraphDatabase implements GraphDatabase {
 
             DBObject query = new BasicDBObject();
             switch (direction) {
-                case OUT:
-                    query.put("_in", id);
-                    break;
-                case IN:
-                    query.put("_out", id);
-                    break;
-                case BOTH:
-                    DBObject in = new BasicDBObject("_in", id);
-                    DBObject out = new BasicDBObject("_out", id);
-                    query.put("$or", new DBObject[]{ in, out });
-                    break;
-                default: throw new IllegalStateException("Unexpected direction value");
+            case OUT:
+                query.put("_in", id);
+                break;
+            case IN:
+                query.put("_out", id);
+                break;
+            case BOTH:
+                DBObject in = new BasicDBObject("_in", id);
+                DBObject out = new BasicDBObject("_out", id);
+                query.put("$or", new DBObject[] { in, out });
+                break;
+            default:
+                throw new IllegalStateException("Unexpected direction value");
             }
 
             DBCursor cursor = collection.find(query);
@@ -105,10 +113,10 @@ public class MongoGraphDatabase implements GraphDatabase {
                     GraphNode in, out;
 
                     if (id.equals(dbObject.get("_out"))) {
-                        in = getNode(ObjectId.valueOf((String)dbObject.get("_in")));
+                        in = getNode(ObjectId.valueOf((String) dbObject.get("_in")));
                         out = MongoNode.this;
                     } else {
-                        out = getNode(ObjectId.valueOf((String)dbObject.get("_out")));
+                        out = getNode(ObjectId.valueOf((String) dbObject.get("_out")));
                         in = MongoNode.this;
                     }
                     return new GraphEdge(in, out);
@@ -206,7 +214,7 @@ public class MongoGraphDatabase implements GraphDatabase {
         Function<DBObject, ObjectId> idMapper = new Function<DBObject, ObjectId>() {
             @Override
             public ObjectId apply(DBObject o) {
-                return ObjectId.valueOf((String)o.get("_in"));
+                return ObjectId.valueOf((String) o.get("_in"));
             }
         };
 
@@ -229,7 +237,10 @@ public class MongoGraphDatabase implements GraphDatabase {
         while (front.size() > 0) {
             DBObject query = new BasicDBObject();
             query.put("_label", Relationship.PARENT.name());
-            query.put("_in", new BasicDBObject("$in", Lists.transform(new ArrayList<ObjectId>(front), idMapper)));
+            query.put(
+                    "_in",
+                    new BasicDBObject("$in", Lists.transform(new ArrayList<ObjectId>(front),
+                            idMapper)));
             DBCursor result = collection.find(query);
             Set<ObjectId> nextFront = new HashSet<ObjectId>();
             for (DBObject o : result) {
@@ -252,7 +263,8 @@ public class MongoGraphDatabase implements GraphDatabase {
         query.put("_out", mappedId.toString());
         query.put("_label", Relationship.MAPPED_TO.name());
         DBObject result = collection.findOne(query);
-        if (result == null) return null;
+        if (result == null)
+            return null;
         return ObjectId.valueOf((String) result.get("_in"));
     }
 
@@ -260,7 +272,8 @@ public class MongoGraphDatabase implements GraphDatabase {
     public GraphNode getNode(ObjectId id) {
         DBObject query = idQuery(id);
         DBObject result = collection.findOne(query);
-        if (result == null) throw new RuntimeException("No such node: " + id);
+        if (result == null)
+            throw new RuntimeException("No such node: " + id);
         return new MongoNode(result);
     }
 
@@ -274,7 +287,7 @@ public class MongoGraphDatabase implements GraphDatabase {
         Function<DBObject, ObjectId> idMapper = new Function<DBObject, ObjectId>() {
             @Override
             public ObjectId apply(DBObject o) {
-                return ObjectId.valueOf((String)o.get("_out"));
+                return ObjectId.valueOf((String) o.get("_out"));
             }
         };
         return ImmutableList.copyOf(Iterators.transform(cursor.iterator(), idMapper));
@@ -299,5 +312,10 @@ public class MongoGraphDatabase implements GraphDatabase {
     public String toString() {
         return String.format("%s[uri: %s]", getClass().getSimpleName(),
                 config == null ? "<unknown>" : config.get("mongodb.uri").or("<unset>"));
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return VERSION;
     }
 }

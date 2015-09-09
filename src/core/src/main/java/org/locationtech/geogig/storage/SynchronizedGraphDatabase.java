@@ -10,6 +10,7 @@
 package org.locationtech.geogig.storage;
 
 import org.locationtech.geogig.api.ObjectId;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 
 import com.google.common.collect.ImmutableList;
@@ -19,6 +20,13 @@ public class SynchronizedGraphDatabase implements GraphDatabase {
 
     public SynchronizedGraphDatabase(GraphDatabase delegate) {
         this.delegate = delegate;
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        synchronized (delegate) {
+            return delegate.getVersion();
+        }
     }
 
     public void open() {

@@ -24,6 +24,7 @@ import org.locationtech.geogig.api.GeogigTransaction;
 import org.locationtech.geogig.api.Ref;
 import org.locationtech.geogig.api.plumbing.TransactionBegin;
 import org.locationtech.geogig.api.plumbing.TransactionEnd;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.Index;
 import org.locationtech.geogig.repository.WorkingTree;
 import org.slf4j.Logger;
@@ -73,6 +74,11 @@ public class TransactionRefDatabase implements RefDatabase {
         this.txRootNamespace = append(TRANSACTIONS_PREFIX, transactionId.toString());
         this.txNamespace = append(txRootNamespace, "changed");
         this.txOrigNamespace = append(txRootNamespace, "orig");
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return refDb.getVersion();
     }
 
     @Override

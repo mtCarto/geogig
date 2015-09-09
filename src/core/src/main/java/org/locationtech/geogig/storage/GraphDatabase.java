@@ -14,6 +14,7 @@ import java.util.Iterator;
 
 import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.di.Singleton;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 
 import com.google.common.annotations.Beta;
@@ -181,4 +182,7 @@ public interface GraphDatabase extends Closeable {
     public GraphNode getNode(ObjectId id);
 
     public void truncate();
+
+    public VersionedFormat getVersion();
+
 }

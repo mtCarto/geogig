@@ -11,30 +11,23 @@ package org.locationtech.geogig.storage.bdbje;
 
 import org.locationtech.geogig.di.StorageProvider;
 import org.locationtech.geogig.di.VersionedFormat;
+import org.locationtech.geogig.storage.GraphDatabase;
+import org.locationtech.geogig.storage.ObjectDatabase;
+import org.locationtech.geogig.storage.RefDatabase;
 import org.locationtech.geogig.storage.fs.FileRefDatabase;
 
 public class JEStorageProviderV01 extends StorageProvider {
-    private static final String NAME = "bdbje";
 
-    private static final String VERSION = "0.1";
-
-    private static final VersionedFormat REFS = new VersionedFormat("file", "1.0",
-            FileRefDatabase.class);
-
-    private static final VersionedFormat GRAPH = new VersionedFormat(NAME, VERSION,
-            JEGraphDatabase_v0_1.class);
-
-    private static final VersionedFormat OBJECT = new VersionedFormat(NAME, VERSION,
-            JEObjectDatabase_v0_1.class);
+    public static final VersionedFormat VERSION = new VersionedFormat("bdbje", "0.1");
 
     @Override
     public String getName() {
-        return NAME;
+        return VERSION.getFormat();
     }
 
     @Override
     public String getVersion() {
-        return VERSION;
+        return VERSION.getVersion();
     }
 
     @Override
@@ -44,17 +37,32 @@ public class JEStorageProviderV01 extends StorageProvider {
 
     @Override
     public VersionedFormat getObjectDatabaseFormat() {
-        return OBJECT;
+        return VERSION;
     }
 
     @Override
     public VersionedFormat getGraphDatabaseFormat() {
-        return GRAPH;
+        return VERSION;
     }
 
     @Override
     public VersionedFormat getRefsDatabaseFormat() {
-        return REFS;
+        return FileRefDatabase.VERSION;
+    }
+
+    @Override
+    protected Class<? extends ObjectDatabase> objectsBinding() {
+        return JEObjectDatabase_v0_1.class;
+    }
+
+    @Override
+    protected Class<? extends RefDatabase> refsBinding() {
+        return FileRefDatabase.class;
+    }
+
+    @Override
+    protected Class<? extends GraphDatabase> graphBinding() {
+        return JEGraphDatabase_v0_1.class;
     }
 
 }

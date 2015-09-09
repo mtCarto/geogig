@@ -22,6 +22,7 @@ import org.locationtech.geogig.api.RevObject;
 import org.locationtech.geogig.api.RevTag;
 import org.locationtech.geogig.api.RevTree;
 import org.locationtech.geogig.di.Singleton;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 
 /**
@@ -221,4 +222,6 @@ public interface ObjectDatabase extends Closeable {
     public long deleteAll(Iterator<ObjectId> ids, BulkOpListener listener);
 
     public BlobStore getBlobStore();
+
+    public VersionedFormat getVersion();
 }

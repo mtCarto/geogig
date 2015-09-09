@@ -26,6 +26,7 @@ import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.api.Platform;
 import org.locationtech.geogig.api.Ref;
 import org.locationtech.geogig.api.plumbing.ResolveGeogigURI;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.AbstractRefDatabase;
 import org.locationtech.geogig.storage.ConfigDatabase;
@@ -51,6 +52,8 @@ public class FileRefDatabase extends AbstractRefDatabase {
 
     private final ConfigDatabase configDB;
 
+    public static final VersionedFormat VERSION = new VersionedFormat("file", "1.0");
+
     /**
      * Constructs a new {@code FileRefDatabase} with the given platform.
      * 
@@ -60,6 +63,11 @@ public class FileRefDatabase extends AbstractRefDatabase {
     public FileRefDatabase(Platform platform, ConfigDatabase configDB) {
         this.platform = platform;
         this.configDB = configDB;
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return VERSION;
     }
 
     /**

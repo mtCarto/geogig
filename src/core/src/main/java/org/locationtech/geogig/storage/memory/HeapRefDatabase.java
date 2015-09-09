@@ -15,6 +15,7 @@ import static org.locationtech.geogig.api.Ref.TRANSACTIONS_PREFIX;
 import java.util.Map;
 
 import org.locationtech.geogig.api.ObjectId;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.storage.AbstractRefDatabase;
 
 import com.google.common.base.Preconditions;
@@ -30,6 +31,11 @@ import com.google.common.collect.Maps;
 public class HeapRefDatabase extends AbstractRefDatabase {
 
     private Map<String, String> refs;
+
+    @Override
+    public VersionedFormat getVersion() {
+        return new VersionedFormat("heap", "0.1");
+    }
 
     /**
      * Creates the reference database.

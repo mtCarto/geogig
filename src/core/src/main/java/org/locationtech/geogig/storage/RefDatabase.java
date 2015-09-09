@@ -15,6 +15,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.locationtech.geogig.api.Ref;
 import org.locationtech.geogig.di.Singleton;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 
 /**
@@ -109,4 +110,6 @@ public interface RefDatabase extends Closeable {
      * @return the references removed, may be empty.
      */
     public abstract Map<String, String> removeAll(String namespace);
+
+    public abstract VersionedFormat getVersion();
 }

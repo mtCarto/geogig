@@ -22,7 +22,7 @@ import org.locationtech.geogig.repository.Hints;
 import org.locationtech.geogig.storage.GraphDatabase;
 import org.locationtech.geogig.storage.ObjectDatabase;
 import org.locationtech.geogig.storage.RefDatabase;
-import org.locationtech.geogig.storage.bdbje.JEStorageProviderV02;
+import org.locationtech.geogig.storage.sqlite.XerialStorageProviderV2;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -31,7 +31,7 @@ import com.google.inject.util.Modules;
 
 public class CLIContextBuilder extends ContextBuilder {
 
-    private static final PluginDefaults defaults = new PluginDefaults(new JEStorageProviderV02());
+    private static final PluginDefaults defaults = new PluginDefaults(new XerialStorageProviderV2());
 
     @Override
     public Context build(Hints hints) {
@@ -60,19 +60,9 @@ public class CLIContextBuilder extends ContextBuilder {
             Iterable<StorageProvider> providers = StorageProvider.findProviders();
 
             for (StorageProvider sp : providers) {
-                VersionedFormat objectDatabaseFormat = sp.getObjectDatabaseFormat();
-                VersionedFormat graphDatabaseFormat = sp.getGraphDatabaseFormat();
-                VersionedFormat refsDatabaseFormat = sp.getRefsDatabaseFormat();
-
-                if (objectDatabaseFormat != null) {
-                    objectDatabaseFormat.bind(objectPlugins);
-                }
-                if (graphDatabaseFormat != null) {
-                    graphDatabaseFormat.bind(graphPlugins);
-                }
-                if (refsDatabaseFormat != null) {
-                    refsDatabaseFormat.bind(refPlugins);
-                }
+                sp.bindObjects(objectPlugins);
+                sp.bindGraph(graphPlugins);
+                sp.bindRefs(refPlugins);
             }
         }
     }

@@ -19,6 +19,7 @@ import org.locationtech.geogig.api.RevFeatureType;
 import org.locationtech.geogig.api.RevObject;
 import org.locationtech.geogig.api.RevTag;
 import org.locationtech.geogig.api.RevTree;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 
 import com.google.inject.Provider;
@@ -171,5 +172,10 @@ public class ForwardingObjectDatabase implements ObjectDatabase {
     @Override
     public BlobStore getBlobStore() {
         return subject.get().getBlobStore();
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return subject.get().getVersion();
     }
 }

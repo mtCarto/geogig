@@ -43,7 +43,7 @@ public class JEGraphDatabase_v0_1 extends JEGraphDatabase {
     @Inject
     public JEGraphDatabase_v0_1(final ConfigDatabase config, final EnvironmentBuilder envProvider,
             final Hints hints) {
-        super(config, envProvider, BINDING_V1, "0.1", hints);
+        super(config, envProvider, BINDING_V1, JEStorageProviderV01.VERSION, hints);
     }
 
     private static class GraphNodeBinding extends TupleBinding<NodeData> {

@@ -9,6 +9,7 @@
  */
 package org.locationtech.geogig.storage.bdbje;
 
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.Hints;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.ConfigDatabase;
@@ -17,6 +18,7 @@ import org.locationtech.geogig.storage.datastream.DataStreamSerializationFactory
 import com.google.inject.Inject;
 
 public final class JEObjectDatabase_v0_1 extends JEObjectDatabase {
+
     @Inject
     public JEObjectDatabase_v0_1(final ConfigDatabase configDB,
             final EnvironmentBuilder envProvider, final Hints hints) {
@@ -37,5 +39,10 @@ public final class JEObjectDatabase_v0_1 extends JEObjectDatabase {
     @Override
     public void checkConfig() throws RepositoryConnectionException {
         RepositoryConnectionException.StorageType.OBJECT.verify(configDB, "bdbje", "0.1");
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return JEStorageProviderV01.VERSION;
     }
 }

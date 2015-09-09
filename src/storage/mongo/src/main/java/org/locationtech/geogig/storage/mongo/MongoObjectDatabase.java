@@ -28,6 +28,7 @@ import org.locationtech.geogig.api.RevFeatureType;
 import org.locationtech.geogig.api.RevObject;
 import org.locationtech.geogig.api.RevTag;
 import org.locationtech.geogig.api.RevTree;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.BlobStore;
 import org.locationtech.geogig.storage.BulkOpListener;
@@ -67,6 +68,10 @@ import com.ning.compress.lzf.LZFOutputStream;
  * @see http://mongodb.com/
  */
 public class MongoObjectDatabase implements ObjectDatabase {
+
+    public static final VersionedFormat VERSION = new VersionedFormat(MongoStorageProvider.NAME,
+            MongoStorageProvider.VERSION);
+
     private final MongoConnectionManager manager;
 
     protected final ConfigDatabase config;
@@ -152,7 +157,8 @@ public class MongoObjectDatabase implements ObjectDatabase {
 
     @Override
     public void configure() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.OBJECT.configure(config, "mongodb", "0.1");
+        RepositoryConnectionException.StorageType.OBJECT.configure(config, VERSION.getFormat(),
+                VERSION.getVersion());
         String uri = config.get("mongodb.uri").or(config.getGlobal("mongodb.uri"))
                 .or("mongodb://localhost:27017/");
         String database = config.get("mongodb.database").or(config.getGlobal("mongodb.database"))
@@ -163,7 +169,8 @@ public class MongoObjectDatabase implements ObjectDatabase {
 
     @Override
     public void checkConfig() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.OBJECT.verify(config, "mongodb", "0.1");
+        RepositoryConnectionException.StorageType.OBJECT.verify(config, VERSION.getFormat(),
+                VERSION.getVersion());
     }
 
     @Override
@@ -470,5 +477,10 @@ public class MongoObjectDatabase implements ObjectDatabase {
     public String toString() {
         return String.format("%s[db: %s, collection: %s]", getClass().getSimpleName(),
                 db == null ? "<unset>" : db, collectionName);
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return VERSION;
     }
 }

@@ -11,22 +11,16 @@ package org.locationtech.geogig.storage.mongo;
 
 import org.locationtech.geogig.di.StorageProvider;
 import org.locationtech.geogig.di.VersionedFormat;
+import org.locationtech.geogig.storage.GraphDatabase;
+import org.locationtech.geogig.storage.ObjectDatabase;
+import org.locationtech.geogig.storage.RefDatabase;
 import org.locationtech.geogig.storage.fs.FileRefDatabase;
 
 public class MongoStorageProvider extends StorageProvider {
 
-    private static final String NAME = "mongodb";
+    static final String NAME = "mongodb";
 
-    private static final String VERSION = "0.1";
-
-    private static final VersionedFormat REFS = new VersionedFormat("file", "1.0",
-            FileRefDatabase.class);
-
-    private static final VersionedFormat GRAPH = new VersionedFormat(NAME, VERSION,
-            MongoGraphDatabase.class);
-
-    private static final VersionedFormat OBJECT = new VersionedFormat(NAME, VERSION,
-            MongoObjectDatabase.class);
+    static final String VERSION = "0.1";
 
     @Override
     public String getName() {
@@ -45,17 +39,32 @@ public class MongoStorageProvider extends StorageProvider {
 
     @Override
     public VersionedFormat getObjectDatabaseFormat() {
-        return OBJECT;
+        return MongoObjectDatabase.VERSION;
     }
 
     @Override
     public VersionedFormat getGraphDatabaseFormat() {
-        return GRAPH;
+        return MongoGraphDatabase.VERSION;
     }
 
     @Override
     public VersionedFormat getRefsDatabaseFormat() {
-        return REFS;
+        return FileRefDatabase.VERSION;
+    }
+
+    @Override
+    protected Class<? extends ObjectDatabase> objectsBinding() {
+        return MongoObjectDatabase.class;
+    }
+
+    @Override
+    protected Class<? extends RefDatabase> refsBinding() {
+        return FileRefDatabase.class;
+    }
+
+    @Override
+    protected Class<? extends GraphDatabase> graphBinding() {
+        return MongoGraphDatabase.class;
     }
 
 }

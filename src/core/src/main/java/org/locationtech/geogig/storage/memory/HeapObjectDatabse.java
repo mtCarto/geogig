@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.api.RevObject;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.storage.AbstractObjectDatabase;
 import org.locationtech.geogig.storage.BlobStore;
 import org.locationtech.geogig.storage.BulkOpListener;
@@ -232,6 +233,11 @@ public class HeapObjectDatabse extends AbstractObjectDatabase implements ObjectD
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return new VersionedFormat("heap", "0.1");
     }
 
 }

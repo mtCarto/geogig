@@ -21,6 +21,7 @@ import java.util.Queue;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.locationtech.geogig.api.ObjectId;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.Hints;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.ConfigDatabase;
@@ -67,7 +68,8 @@ abstract class JEGraphDatabase extends SynchronizedGraphDatabase {
     static final String ENVIRONMENT_NAME = "graph";
 
     public JEGraphDatabase(final ConfigDatabase config, final EnvironmentBuilder envProvider,
-            final TupleBinding<NodeData> binding, final String formatVersion, final Hints hints) {
+            final TupleBinding<NodeData> binding, final VersionedFormat formatVersion,
+            final Hints hints) {
         super(new Impl(config, envProvider, binding, formatVersion, hints));
     }
 
@@ -92,16 +94,22 @@ abstract class JEGraphDatabase extends SynchronizedGraphDatabase {
 
         private final boolean readOnly;
 
-        private final String formatVersion;
+        private final VersionedFormat formatVersion;
 
         public Impl(final ConfigDatabase config, final EnvironmentBuilder envProvider,
-                final TupleBinding<NodeData> binding, final String formatVersion, final Hints hints) {
+                final TupleBinding<NodeData> binding, final VersionedFormat formatVersion,
+                final Hints hints) {
             this.configDb = config;
             this.envProvider = envProvider;
             this.BINDING = binding;
             this.formatVersion = formatVersion;
             this.envName = JEGraphDatabase.ENVIRONMENT_NAME;
             this.readOnly = hints.getBoolean(Hints.OBJECTS_READ_ONLY);
+        }
+
+        @Override
+        public VersionedFormat getVersion() {
+            return formatVersion;
         }
 
         @Override
@@ -184,14 +192,14 @@ abstract class JEGraphDatabase extends SynchronizedGraphDatabase {
 
         @Override
         public void configure() throws RepositoryConnectionException {
-            RepositoryConnectionException.StorageType.GRAPH.configure(configDb, "bdbje",
-                    formatVersion);
+            RepositoryConnectionException.StorageType.GRAPH.configure(configDb,
+                    formatVersion.getFormat(), formatVersion.getVersion());
         }
 
         @Override
         public void checkConfig() throws RepositoryConnectionException {
-            RepositoryConnectionException.StorageType.GRAPH
-                    .verify(configDb, "bdbje", formatVersion);
+            RepositoryConnectionException.StorageType.GRAPH.verify(configDb,
+                    formatVersion.getFormat(), formatVersion.getVersion());
         }
 
         @Override

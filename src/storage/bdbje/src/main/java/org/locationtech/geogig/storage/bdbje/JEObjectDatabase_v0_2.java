@@ -9,6 +9,8 @@
  */
 package org.locationtech.geogig.storage.bdbje;
 
+import static org.locationtech.geogig.storage.bdbje.JEStorageProviderV02.VERSION;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.Hints;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.ConfigDatabase;
@@ -31,11 +33,19 @@ public final class JEObjectDatabase_v0_2 extends JEObjectDatabase {
 
     @Override
     public void configure() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.OBJECT.configure(configDB, "bdbje", "0.2");
+        RepositoryConnectionException.StorageType.OBJECT.configure(configDB, VERSION.getFormat(),
+                VERSION.getVersion());
     }
 
     @Override
     public void checkConfig() throws RepositoryConnectionException {
-        RepositoryConnectionException.StorageType.OBJECT.verify(configDB, "bdbje", "0.2");
+        RepositoryConnectionException.StorageType.OBJECT.verify(configDB, VERSION.getFormat(),
+                VERSION.getVersion());
     }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return VERSION;
+    }
+
 }

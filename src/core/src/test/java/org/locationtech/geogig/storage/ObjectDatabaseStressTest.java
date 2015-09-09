@@ -108,7 +108,6 @@ public abstract class ObjectDatabaseStressTest {
         testPutAll(100_000);
     }
 
-    @Ignore
     @Test
     public void testPutAll_1M() throws Exception {
         testPutAll(1000_000);
@@ -136,7 +135,7 @@ public abstract class ObjectDatabaseStressTest {
         MemoryUsage initialMem = MEMORY_MX_BEAN.getHeapMemoryUsage();
 
         Stopwatch sw = Stopwatch.createStarted();
-        final int threadCount = 4;
+        final int threadCount = 1;
 
         final CountingListener listener = BulkOpListener.newCountingListener();
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -316,12 +315,12 @@ public abstract class ObjectDatabaseStressTest {
     }
 
     private RevObject fakeObject(ObjectId objectId) {
-        String oidString = objectId.toString();
-        ObjectId treeId = ObjectId.forString("tree" + oidString);
+        //String oidString = objectId.toString();
+        ObjectId treeId = ObjectId.NULL;// ObjectId.forString("tree" + oidString);
         ImmutableList<ObjectId> parentIds = ImmutableList.of();
         RevPerson author = new RevPersonImpl("Gabriel", "groldan@boundlessgeo.com", 1000, -3);
         RevPerson committer = new RevPersonImpl("Gabriel", "groldan@boundlessgeo.com", 1000, -3);
-        String message = "message " + oidString;
+        String message = "message ";
         return new RevCommitImpl(objectId, treeId, parentIds, author, committer, message);
     }
 

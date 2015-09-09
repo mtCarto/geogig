@@ -21,6 +21,7 @@ import java.util.Map;
 import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.api.Platform;
 import org.locationtech.geogig.api.plumbing.ResolveGeogigURI;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.storage.GraphDatabase;
 
 import com.google.common.base.Function;
@@ -278,5 +279,10 @@ public class HeapGraphDatabase implements GraphDatabase {
     @Override
     public GraphNode getNode(ObjectId id) {
         return new HeapGraphNode(graph.get(id).get());
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return new VersionedFormat("heap", "1");
     }
 }

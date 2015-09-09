@@ -27,6 +27,7 @@ import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.api.Platform;
 import org.locationtech.geogig.api.RevObject;
 import org.locationtech.geogig.api.plumbing.ResolveGeogigURI;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.repository.RepositoryConnectionException;
 import org.locationtech.geogig.storage.AbstractObjectDatabase;
 import org.locationtech.geogig.storage.BlobStore;
@@ -313,5 +314,10 @@ public class FileObjectDatabase extends AbstractObjectDatabase implements Object
     @Override
     public BlobStore getBlobStore() {
         return blobStore;
+    }
+
+    @Override
+    public VersionedFormat getVersion() {
+        return new VersionedFormat("file", "0.1");
     }
 }
