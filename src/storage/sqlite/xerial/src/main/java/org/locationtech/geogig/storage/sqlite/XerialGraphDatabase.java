@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
@@ -29,6 +30,10 @@ import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.storage.ConfigDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sqlite.SQLiteDataSource;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Graph database based on xerial SQLite jdbc driver.
@@ -53,11 +58,21 @@ abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
 
     @Override
     protected DataSource connect(File geogigDir) {
-        return Xerial.newDataSource(new File(geogigDir, "graph.db"));
+        SQLiteDataSource dataSource = Xerial.newDataSource(new File(geogigDir, "graph.db"));
+
+        HikariConfig poolConfig = new HikariConfig();
+        poolConfig.setMaximumPoolSize(10);
+        poolConfig.setDataSource(dataSource);
+        poolConfig.setMinimumIdle(0);
+        poolConfig.setIdleTimeout(TimeUnit.SECONDS.toMillis(10));
+
+        HikariDataSource connPool = new HikariDataSource(poolConfig);
+        return connPool;
     }
 
     @Override
     protected void close(DataSource ds) {
+        ((HikariDataSource) ds).close();
     }
 
     @Override
@@ -117,9 +132,14 @@ abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
             protected Boolean doRun(Connection cx) throws IOException, SQLException {
                 String sql = format("INSERT OR IGNORE INTO %s (id) VALUES (?)", NODES);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, node))) {
                     ps.setString(1, node);
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return true;
             }
@@ -153,11 +173,16 @@ abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
             protected Void doRun(Connection cx) throws IOException, SQLException {
                 String sql = format("INSERT or IGNORE INTO %s (src, dst) VALUES (?, ?)", EDGES);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, src, dst))) {
                     ps.setString(1, src);
                     ps.setString(2, dst);
 
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return null;
             }
@@ -171,11 +196,16 @@ abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
             protected Void doRun(Connection cx) throws IOException, SQLException {
                 String sql = format("INSERT OR REPLACE INTO %s (alias, nid) VALUES (?,?)", MAPPINGS);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, from))) {
                     ps.setString(1, from);
                     ps.setString(2, to);
 
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return null;
             }
@@ -210,12 +240,17 @@ abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
             protected Void doRun(Connection cx) throws IOException, SQLException {
                 String sql = format("INSERT OR REPLACE INTO %s (nid,key,val) VALUES (?,?,?)", PROPS);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, node, key, val))) {
                     ps.setString(1, node);
                     ps.setString(2, key);
                     ps.setString(3, val);
 
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return null;
             }

@@ -50,8 +50,13 @@ class XerialConflictsDatabase extends SQLiteConflictsDatabase<DataSource> {
                 String sql = format("CREATE TABLE IF NOT EXISTS %s (namespace VARCHAR, "
                         + "path VARCHAR, conflict VARCHAR, PRIMARY KEY(namespace,path))", CONFLICTS);
 
+                cx.setAutoCommit(false);
                 try (Statement statement = cx.createStatement()) {
                     statement.execute(log(sql, LOG));
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
 
                 return null;
@@ -113,12 +118,17 @@ class XerialConflictsDatabase extends SQLiteConflictsDatabase<DataSource> {
 
                 log(sql, LOG, namespace, path, conflict);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(sql)) {
                     ps.setString(1, namespace);
                     ps.setString(2, path);
                     ps.setString(3, conflict);
 
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return null;
             }
@@ -134,10 +144,15 @@ class XerialConflictsDatabase extends SQLiteConflictsDatabase<DataSource> {
 
                 log(sql, LOG, namespace, path);
 
+                cx.setAutoCommit(false);
                 try (PreparedStatement ps = cx.prepareStatement(sql)) {
                     ps.setString(1, namespace);
                     ps.setString(2, path);
                     ps.executeUpdate();
+                    cx.commit();
+                } catch (SQLException e) {
+                    cx.rollback();
+                    throw e;
                 }
                 return null;
             }

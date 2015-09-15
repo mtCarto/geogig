@@ -80,21 +80,22 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
     @Inject
     public XerialObjectDatabaseV2(ConfigDatabase configdb, Platform platform) {
-        this(configdb, platform, "objects");
+        super(configdb, platform, SQLiteStorage.VERSION_2);
+        this.dbName = "objects";
     }
 
-    public XerialObjectDatabaseV2(ConfigDatabase configdb, Platform platform, String dbName) {
-        super(configdb, platform, SQLiteStorage.VERSION_2);
-        this.dbName = dbName;
-    }
+    // StackTraceElement[] openingCallers;
 
     @Override
     protected DataSource connect(File geogigDir) {
+        // openingCallers = Thread.currentThread().getStackTrace();
         SQLiteDataSource dataSource = Xerial.newDataSource(new File(geogigDir, dbName + ".db"));
 
         HikariConfig poolConfig = new HikariConfig();
-        poolConfig.setMaximumPoolSize(40);
+        poolConfig.setMaximumPoolSize(20);
         poolConfig.setDataSource(dataSource);
+        poolConfig.setMinimumIdle(0);
+        poolConfig.setIdleTimeout(TimeUnit.SECONDS.toMillis(10));
 
         HikariDataSource connPool = new HikariDataSource(poolConfig);
 
@@ -110,24 +111,51 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
     @Override
     protected void close(DataSource ds) {
-        if (writerThread != null) {
-            writerThread.shutdown();
-            try {
-                writerThread.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        try {
+            ExecutorService writerThread = this.writerThread;
+            this.writerThread = null;
+            if (writerThread != null) {
+                writerThread.shutdown();
+                try {
+                    writerThread.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-            writerThread = null;
-        }
-        if (writerConnection != null) {
+        } finally {
             try {
-                writerConnection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
+                Connection writerConnection = this.writerConnection;
+                this.writerConnection = null;
+                if (writerConnection != null) {
+                    try {
+                        writerConnection.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } finally {
+                ((HikariDataSource) ds).close();
             }
-            writerConnection = null;
         }
-        ((HikariDataSource) ds).close();
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (writerConnection != null) {
+                System.err.println("----------------------------------------------");
+                System.err.println("---------------- WARNING ---------------------");
+                System.err.printf("---- DATABASE '%s/%s' has not been closed ------\n",
+                        super.platform.pwd(), dbName + ".db");
+                // for (StackTraceElement e : openingCallers) {
+                // System.err.println(e.toString());
+                // }
+                System.err.println("----------------------------------------------");
+                close();
+            }
+        } finally {
+            super.finalize();
+        }
     }
 
     @Override
@@ -294,7 +322,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
         int depth = transactionDepth.incrementAndGet();
         if (depth == 1) {
             try {
-                //System.err.println("BEGIN TRANSACTION........");
+                // System.err.println("BEGIN TRANSACTION........");
                 writerConnection.setAutoCommit(false);
             } catch (SQLException e) {
                 transactionDepth.decrementAndGet();
@@ -307,7 +335,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
         int depth = transactionDepth.decrementAndGet();
         if (depth == 0) {
             try {
-                //System.err.println("END TRANSACTION........");
+                // System.err.println("END TRANSACTION........");
                 writerConnection.commit();
                 writerConnection.setAutoCommit(true);
             } catch (SQLException e) {
@@ -354,7 +382,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
     public void putAll(Iterator<? extends RevObject> objects, final BulkOpListener listener) {
         Preconditions.checkState(isOpen(), "No open database connection");
 
-        //System.err.println("put allllllll");
+        // System.err.println("put allllllll");
         startTransaction();
         while (objects.hasNext()) {
 

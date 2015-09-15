@@ -108,6 +108,7 @@ public abstract class ObjectDatabaseStressTest {
         testPutAll(100_000);
     }
 
+    @Ignore
     @Test
     public void testPutAll_1M() throws Exception {
         testPutAll(1000_000);
