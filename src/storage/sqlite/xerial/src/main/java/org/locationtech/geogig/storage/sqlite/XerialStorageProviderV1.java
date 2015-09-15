@@ -11,31 +11,23 @@ package org.locationtech.geogig.storage.sqlite;
 
 import org.locationtech.geogig.di.StorageProvider;
 import org.locationtech.geogig.di.VersionedFormat;
+import org.locationtech.geogig.storage.GraphDatabase;
+import org.locationtech.geogig.storage.ObjectDatabase;
+import org.locationtech.geogig.storage.RefDatabase;
 import org.locationtech.geogig.storage.fs.FileRefDatabase;
 
-public class XerialStorageProvider extends StorageProvider {
+public class XerialStorageProviderV1 extends StorageProvider {
 
-    private static final String NAME = SQLiteStorage.FORMAT_NAME;
-
-    private static final String VERSION = SQLiteStorage.VERSION;
-
-    private static final VersionedFormat REFS = new VersionedFormat("file", "1.0",
-            FileRefDatabase.class);
-
-    private static final VersionedFormat GRAPH = new VersionedFormat(NAME, VERSION,
-            XerialGraphDatabase.class);
-
-    private static final VersionedFormat OBJECT = new VersionedFormat(NAME, VERSION,
-            XerialObjectDatabase.class);
+    private static final VersionedFormat VERSION = SQLiteStorage.VERSION_1;
 
     @Override
     public String getName() {
-        return NAME;
+        return VERSION.getFormat();
     }
 
     @Override
     public String getVersion() {
-        return VERSION;
+        return VERSION.getVersion();
     }
 
     @Override
@@ -45,17 +37,32 @@ public class XerialStorageProvider extends StorageProvider {
 
     @Override
     public VersionedFormat getObjectDatabaseFormat() {
-        return OBJECT;
+        return VERSION;
     }
 
     @Override
     public VersionedFormat getGraphDatabaseFormat() {
-        return GRAPH;
+        return VERSION;
     }
 
     @Override
     public VersionedFormat getRefsDatabaseFormat() {
-        return REFS;
+        return FileRefDatabase.VERSION;
+    }
+
+    @Override
+    protected Class<? extends ObjectDatabase> objectsBinding() {
+        return XerialObjectDatabaseV1.class;
+    }
+
+    @Override
+    protected Class<? extends RefDatabase> refsBinding() {
+        return FileRefDatabase.class;
+    }
+
+    @Override
+    protected Class<? extends GraphDatabase> graphBinding() {
+        return XerialGraphDatabaseV1.class;
     }
 
 }

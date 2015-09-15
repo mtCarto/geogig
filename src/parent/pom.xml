@@ -127,7 +127,8 @@
     <sqljdbc4.version>3.0</sqljdbc4.version>
     <osmosis.version>0.43.1</osmosis.version>
     <xmlunit.version>1.3</xmlunit.version>
-    
+    <hikaricp.version>2.4.1</hikaricp.version>    
+
     <test.maxHeapSize>512M</test.maxHeapSize>
     <test.tmpDir>${project.build.directory}</test.tmpDir> <!-- use the provided tmp dir for tests, defaults to project's target/ directory -->
     <maven.build.timestamp.format>dd-MMM-yyyy HH:mm</maven.build.timestamp.format>
@@ -297,6 +298,12 @@
         <groupId>com.noelios.restlet</groupId>
         <artifactId>com.noelios.restlet.ext.servlet</artifactId>
         <version>${restlet.version}</version>
+      </dependency>
+      <dependency>
+        <!-- JDBC connection pool -->
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>${hikaricp.version}</version>
       </dependency>
 
       <!-- Test scope dependencies -->

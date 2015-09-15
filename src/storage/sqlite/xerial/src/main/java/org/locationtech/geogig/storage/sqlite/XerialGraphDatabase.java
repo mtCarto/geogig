@@ -25,18 +25,17 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.locationtech.geogig.api.Platform;
+import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.storage.ConfigDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 
 /**
  * Graph database based on xerial SQLite jdbc driver.
  * 
  * @author Justin Deoliveira, Boundless
  */
-public class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
+abstract class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
 
     static Logger LOG = LoggerFactory.getLogger(XerialGraphDatabase.class);
 
@@ -48,9 +47,8 @@ public class XerialGraphDatabase extends SQLiteGraphDatabase<DataSource> {
 
     static final String MAPPINGS = "mappings";
 
-    @Inject
-    public XerialGraphDatabase(ConfigDatabase configdb, Platform platform) {
-        super(configdb, platform);
+    public XerialGraphDatabase(ConfigDatabase configdb, Platform platform, VersionedFormat version) {
+        super(configdb, platform, version);
     }
 
     @Override

@@ -14,6 +14,7 @@ import java.net.URI;
 
 import org.locationtech.geogig.api.Platform;
 import org.locationtech.geogig.api.plumbing.ResolveGeogigURI;
+import org.locationtech.geogig.di.VersionedFormat;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -32,7 +33,9 @@ public class SQLiteStorage {
     /**
      * Implementation version.
      */
-    public static final String VERSION = "0.1";
+    public static final VersionedFormat VERSION_1 = new VersionedFormat(FORMAT_NAME, "0.1");
+
+    public static final VersionedFormat VERSION_2 = new VersionedFormat(FORMAT_NAME, "0.2");
 
     /**
      * Returns the .geogig directory for the platform object.

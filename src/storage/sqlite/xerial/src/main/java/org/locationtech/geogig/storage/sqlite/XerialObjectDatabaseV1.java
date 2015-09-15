@@ -47,9 +47,9 @@ import com.google.inject.Inject;
  * 
  * @author Justin Deoliveira, Boundless
  */
-public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
+public class XerialObjectDatabaseV1 extends SQLiteObjectDatabase<DataSource> {
 
-    static Logger LOG = LoggerFactory.getLogger(XerialObjectDatabase.class);
+    static Logger LOG = LoggerFactory.getLogger(XerialObjectDatabaseV1.class);
 
     static final String OBJECTS = "objects";
 
@@ -62,15 +62,13 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
     private FileBlobStore blobStore;
 
     @Inject
-    public XerialObjectDatabase(ConfigDatabase configdb, Platform platform) {
+    public XerialObjectDatabaseV1(ConfigDatabase configdb, Platform platform) {
         this(configdb, platform, "objects");
     }
 
-    public XerialObjectDatabase(ConfigDatabase configdb, Platform platform, String dbName) {
-        super(configdb, platform);
+    public XerialObjectDatabaseV1(ConfigDatabase configdb, Platform platform, String dbName) {
+        super(configdb, platform, SQLiteStorage.VERSION_1);
         this.dbName = dbName;
-        // File db = new File(new File(platform.pwd(), ".geogig"), name + ".db");
-        // dataSource = Xerial.newDataSource(db);
     }
 
     @Override
@@ -114,14 +112,14 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
     }
 
     @Override
-    public boolean has(final String id, DataSource ds) {
+    public boolean has(final ObjectId id, DataSource ds) {
         return new DbOp<Boolean>() {
             @Override
             protected Boolean doRun(Connection cx) throws SQLException {
                 String sql = format("SELECT count(*) FROM %s WHERE id = ?", OBJECTS);
 
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, id))) {
-                    ps.setString(1, id);
+                    ps.setString(1, id.toString());
 
                     try (ResultSet rs = ps.executeQuery()) {
                         rs.next();
@@ -157,7 +155,7 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
     }
 
     @Override
-    public InputStream get(final String id, DataSource ds) {
+    public InputStream get(final ObjectId id, DataSource ds) {
         return new DbOp<InputStream>() {
             @Override
             protected InputStream doRun(Connection cx) throws SQLException {
@@ -165,7 +163,7 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
 
                 InputStream in = null;
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, id))) {
-                    ps.setString(1, id);
+                    ps.setString(1, id.toString());
 
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
@@ -180,14 +178,14 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
     }
 
     @Override
-    public void put(final String id, final InputStream obj, DataSource ds) {
+    public void put(final ObjectId id, final InputStream obj, DataSource ds) {
         new DbOp<Void>() {
             @Override
             protected Void doRun(Connection cx) throws SQLException, IOException {
                 String sql = format("INSERT OR IGNORE INTO %s (id,object) VALUES (?,?)", OBJECTS);
 
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, id, obj))) {
-                    ps.setString(1, id);
+                    ps.setString(1, id.toString());
                     ps.setBytes(2, ByteStreams.toByteArray(obj));
                     ps.executeUpdate();
                 }
@@ -197,14 +195,14 @@ public class XerialObjectDatabase extends SQLiteObjectDatabase<DataSource> {
     }
 
     @Override
-    public boolean delete(final String id, DataSource ds) {
+    public boolean delete(final ObjectId id, DataSource ds) {
         return new DbOp<Boolean>() {
             @Override
             protected Boolean doRun(Connection cx) throws SQLException {
                 String sql = format("DELETE FROM %s WHERE id = ?", OBJECTS);
 
                 try (PreparedStatement ps = cx.prepareStatement(log(sql, LOG, id))) {
-                    ps.setString(1, id);
+                    ps.setString(1, id.toString());
 
                     int updateCount = ps.executeUpdate();
                     return updateCount > 0;
