@@ -25,13 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -47,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteDataSource;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -68,15 +61,11 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
     final String dbName;
 
-    private XerialConflictsDatabase conflicts;
+    private XerialConflictsDatabaseV2 conflicts;
 
     private FileBlobStore blobStore;
 
-    private ExecutorService writerThread;
-
-    private Connection writerConnection;
-
-    private AtomicInteger transactionDepth = new AtomicInteger();
+    private SQLiteTransactionHandler txHandler;
 
     @Inject
     public XerialObjectDatabaseV2(ConfigDatabase configdb, Platform platform) {
@@ -98,51 +87,24 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
         poolConfig.setIdleTimeout(TimeUnit.SECONDS.toMillis(10));
 
         HikariDataSource connPool = new HikariDataSource(poolConfig);
-
-        try {
-            this.writerConnection = connPool.getConnection();
-        } catch (SQLException e) {
-            throw Throwables.propagate(e);
-        }
-        this.writerThread = Executors.newSingleThreadExecutor();
+        this.txHandler = new SQLiteTransactionHandler(connPool);
 
         return connPool;
     }
 
     @Override
     protected void close(DataSource ds) {
-        try {
-            ExecutorService writerThread = this.writerThread;
-            this.writerThread = null;
-            if (writerThread != null) {
-                writerThread.shutdown();
-                try {
-                    writerThread.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        } finally {
-            try {
-                Connection writerConnection = this.writerConnection;
-                this.writerConnection = null;
-                if (writerConnection != null) {
-                    try {
-                        writerConnection.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } finally {
-                ((HikariDataSource) ds).close();
-            }
+        if (this.txHandler != null) {
+            this.txHandler.close();
+            this.txHandler = null;
         }
+        ((HikariDataSource) ds).close();
     }
 
     @Override
     protected void finalize() throws Throwable {
         try {
-            if (writerConnection != null) {
+            if (this.txHandler != null) {
                 System.err.println("----------------------------------------------");
                 System.err.println("---------------- WARNING ---------------------");
                 System.err.printf("---- DATABASE '%s/%s' has not been closed ------\n",
@@ -160,7 +122,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
     @Override
     public void init(DataSource ds) {
-        runTx(new WriteOp<Void>() {
+        runTx(new SQLiteTransactionHandler.WriteOp<Void>() {
 
             @Override
             protected Void doRun(Connection cx) throws SQLException {
@@ -175,14 +137,14 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
             }
         });
 
-        conflicts = new XerialConflictsDatabase(ds);
+        conflicts = new XerialConflictsDatabaseV2(ds, txHandler);
         conflicts.open();
         blobStore = new FileBlobStore(platform);
         blobStore.open();
     }
 
     @Override
-    public XerialConflictsDatabase getConflictsDatabase() {
+    public XerialConflictsDatabaseV2 getConflictsDatabase() {
         return conflicts;
     }
 
@@ -275,7 +237,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
     @Override
     public void put(final ObjectId id, final InputStream obj, DataSource ds) {
 
-        runTx(new WriteOp<Void>() {
+        runTx(new SQLiteTransactionHandler.WriteOp<Void>() {
             @Override
             protected Void doRun(Connection cx) throws IOException, SQLException {
                 String sql = format("INSERT OR IGNORE INTO %s (inthash,id,object) VALUES (?,?,?)",
@@ -296,7 +258,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
     @Override
     public boolean delete(final ObjectId id, DataSource ds) {
-        return runTx(new WriteOp<Boolean>() {
+        return runTx(new SQLiteTransactionHandler.WriteOp<Boolean>() {
             @Override
             protected Boolean doRun(Connection cx) throws SQLException {
                 String sql = format("DELETE FROM %s WHERE inthash = ? AND id = ?", OBJECTS);
@@ -312,67 +274,8 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
         });
     }
 
-    private abstract class WriteOp<T> extends DbOp<T> {
-
-        protected abstract T doRun(Connection cx) throws IOException, SQLException;
-
-    }
-
-    private synchronized void startTransaction() {
-        int depth = transactionDepth.incrementAndGet();
-        if (depth == 1) {
-            try {
-                // System.err.println("BEGIN TRANSACTION........");
-                writerConnection.setAutoCommit(false);
-            } catch (SQLException e) {
-                transactionDepth.decrementAndGet();
-                throw Throwables.propagate(e);
-            }
-        }
-    }
-
-    private synchronized void endTransaction() {
-        int depth = transactionDepth.decrementAndGet();
-        if (depth == 0) {
-            try {
-                // System.err.println("END TRANSACTION........");
-                writerConnection.commit();
-                writerConnection.setAutoCommit(true);
-            } catch (SQLException e) {
-                throw Throwables.propagate(e);
-            }
-        }
-    }
-
-    private <T> T runTx(final WriteOp<T> dbop) {
-
-        Callable<T> task = new Callable<T>() {
-
-            @Override
-            public T call() throws Exception {
-                startTransaction();
-                T result;
-                try {
-                    result = dbop.doRun(writerConnection);
-                } catch (Exception e) {
-                    transactionDepth.decrementAndGet();
-                    writerConnection.rollback();
-                    throw e;
-                }
-                // op succeeded
-                endTransaction();
-                return result;
-            }
-        };
-
-        Future<T> future = writerThread.submit(task);
-        T result;
-        try {
-            result = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw Throwables.propagate(Throwables.getRootCause(e));
-        }
-        return result;
+    private <T> T runTx(final SQLiteTransactionHandler.WriteOp<T> dbop) {
+        return txHandler.runTx(dbop);
     }
 
     /**
@@ -383,12 +286,12 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
         Preconditions.checkState(isOpen(), "No open database connection");
 
         // System.err.println("put allllllll");
-        startTransaction();
+        txHandler.startTransaction();
         while (objects.hasNext()) {
 
             final Iterator<? extends RevObject> objs = Iterators.limit(objects, partitionSize);
 
-            runTx(new WriteOp<Void>() {
+            runTx(new SQLiteTransactionHandler.WriteOp<Void>() {
 
                 @Override
                 protected Void doRun(Connection cx) throws IOException, SQLException {
@@ -420,7 +323,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
                 }
             });
         }
-        endTransaction();
+        txHandler.endTransaction();
     }
 
     void notifyInserted(int[] inserted, List<ObjectId> objects, BulkOpListener listener) {
@@ -438,13 +341,13 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
     public long deleteAll(Iterator<ObjectId> ids, final BulkOpListener listener) {
         Preconditions.checkState(isOpen(), "No open database connection");
 
-        startTransaction();
+        txHandler.startTransaction();
         long totalCount = 0;
         while (ids.hasNext()) {
 
             final Iterator<ObjectId> deleteIds = Iterators.limit(ids, partitionSize);
 
-            totalCount += runTx(new WriteOp<Long>() {
+            totalCount += runTx(new SQLiteTransactionHandler.WriteOp<Long>() {
 
                 @Override
                 protected Long doRun(Connection cx) throws IOException, SQLException {
@@ -469,7 +372,7 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
             }).longValue();
 
         }
-        endTransaction();
+        txHandler.endTransaction();
 
         return totalCount;
     }
