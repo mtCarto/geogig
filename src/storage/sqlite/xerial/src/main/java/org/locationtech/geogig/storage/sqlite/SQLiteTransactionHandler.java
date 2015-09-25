@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 
 class SQLiteTransactionHandler {
@@ -69,7 +70,15 @@ class SQLiteTransactionHandler {
         int depth = transactionDepth.incrementAndGet();
         if (depth == 1) {
             try {
-                // System.err.println("BEGIN TRANSACTION........");
+                // System.err.println("BEGIN TRANSACTION........ " +
+                // Thread.currentThread().getName());
+                // int i = 0;
+                // for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+                // System.err.println(e);
+                // if (i++ == 10) {
+                // break;
+                // }
+                // }
                 writerConnection.setAutoCommit(false);
             } catch (SQLException e) {
                 transactionDepth.decrementAndGet();
@@ -83,7 +92,17 @@ class SQLiteTransactionHandler {
         if (depth == 0) {
             try {
                 // System.err.println("END TRANSACTION........");
+                // int i = 0;
+                // for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+                // System.err.println(e);
+                // if (i++ == 10) {
+                // break;
+                // }
+                // }
+
+                Stopwatch sw = Stopwatch.createStarted();
                 writerConnection.commit();
+                System.err.println("committed in " + sw.stop());
                 writerConnection.setAutoCommit(true);
             } catch (SQLException e) {
                 throw Throwables.propagate(e);

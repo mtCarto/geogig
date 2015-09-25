@@ -126,12 +126,20 @@ public class XerialObjectDatabaseV2 extends SQLiteObjectDatabase<DataSource> {
 
             @Override
             protected Void doRun(Connection cx) throws SQLException {
+                // String createTable = format(
+                // "CREATE TABLE IF NOT EXISTS %s (inthash int, id varchar, object blob, PRIMARY KEY(inthash, id)) WITHOUT ROWID",
+                // OBJECTS);
+
                 String createTable = format(
-                        "CREATE TABLE IF NOT EXISTS %s (inthash int, id varchar, object blob, PRIMARY KEY(inthash, id))",
+                        "CREATE TABLE IF NOT EXISTS %s (inthash int NOT NULL, id varchar PRIMARY KEY NOT NULL, object blob NOT NULL) WITHOUT ROWID",
+                        OBJECTS);
+                String createIndex = format(
+                        "CREATE INDEX IF NOT EXISTS %s_inthash_idx ON %s(inthash  ) ", OBJECTS,
                         OBJECTS);
 
                 try (Statement stmt = cx.createStatement()) {
                     stmt.execute(log(createTable, LOG));
+                    stmt.execute(log(createIndex, LOG));
                 }
                 return null;
             }

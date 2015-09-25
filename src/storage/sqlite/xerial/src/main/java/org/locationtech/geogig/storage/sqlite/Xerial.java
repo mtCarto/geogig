@@ -36,7 +36,7 @@ public class Xerial {
     /**
      * Default synchronization setting, see {@link #turnSynchronizationOff()}
      */
-    private static SynchronousMode DEFAULT_SYNC_MODE = SynchronousMode.NORMAL;
+    private static SynchronousMode DEFAULT_SYNC_MODE = SynchronousMode.OFF;
 
     /**
      * Turns SQLite synchronization off.
