@@ -44,6 +44,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -393,11 +394,9 @@ public class WriteTree2Test extends RepositoryTestCase {
                 onlyOnLeft);
         assertEquals(set(), onlyOnRight);
         assertEquals(
-                set("roads", "roads/roads.0", "roads/streets/streets.0",
-                        "roads/highways/highways.0", "roads/highways/highways.2",
-                        "roads/highways/highways.1", "roads/highways", "roads/streets"),
-                entriesInCommon);
-        assertEquals(set(), entriesDiffering);
+                set("roads/roads.0", "roads/streets/streets.0", "roads/highways/highways.0",
+                        "roads/highways/highways.2", "roads/highways/highways.1"), entriesInCommon);
+        assertEquals(set("roads", "roads/streets", "roads/highways"), entriesDiffering);
 
     }
 
@@ -716,6 +715,6 @@ public class WriteTree2Test extends RepositoryTestCase {
         if (contents == null) {
             return ImmutableSet.of();
         }
-        return ImmutableSet.copyOf(contents);
+        return ImmutableSet.copyOf(Sets.newTreeSet(ImmutableList.copyOf(contents)));
     }
 }
