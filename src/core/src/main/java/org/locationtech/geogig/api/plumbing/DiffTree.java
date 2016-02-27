@@ -387,7 +387,7 @@ public class DiffTree extends AbstractGeoGigOp<Iterator<DiffEntry>> implements
         }
     }
 
-    private static class DiffEntryProducer implements Consumer {
+    private static class DiffEntryProducer extends PreOrderDiffWalk.AbstractConsumer {
 
         private boolean reportFeatures = true, reportTrees = false;
 
@@ -461,14 +461,6 @@ public class DiffTree extends AbstractGeoGigOp<Iterator<DiffEntry>> implements
                 @Nullable Bucket left, @Nullable Bucket right) {
 
             return !finished;
-        }
-
-        @Override
-        public void endBucket(NodeRef leftParent, NodeRef rightParent, BucketIndex bucketIndex,
-                @Nullable Bucket left, @Nullable Bucket right) {
-
-            // do nothing
-
         }
     }
 

@@ -149,7 +149,7 @@ public class DiffBounds extends AbstractGeoGigOp<DiffSummary<BoundingBox, Boundi
         return objectDatabase().getTree(id.get());
     }
 
-    private static class BoundsWalk implements PreOrderDiffWalk.Consumer {
+    private static class BoundsWalk extends PreOrderDiffWalk.AbstractConsumer {
 
         /**
          * Private extension of {@link ReferencedEnvelope} to make only the methods
@@ -267,13 +267,6 @@ public class DiffBounds extends AbstractGeoGigOp<DiffSummary<BoundingBox, Boundi
                 return false;
             }
             return true;
-        }
-
-        @Override
-        public void endBucket(NodeRef leftParent, NodeRef rightParent, BucketIndex bucketIndex,
-                @Nullable Bucket left, @Nullable Bucket right) {
-            // TODO Auto-generated method stub
-
         }
 
         private ObjectId md(@Nullable NodeRef node) {

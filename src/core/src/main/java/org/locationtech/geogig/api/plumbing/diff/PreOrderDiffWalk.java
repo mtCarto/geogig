@@ -996,6 +996,36 @@ public class PreOrderDiffWalk {
                 @Nullable final Bucket right);
     }
 
+    public static abstract class AbstractConsumer implements Consumer {
+        @Override
+        public boolean feature(@Nullable NodeRef left, @Nullable NodeRef right) {
+            return true;
+        }
+
+        @Override
+        public boolean tree(@Nullable NodeRef left, @Nullable NodeRef right) {
+            return true;
+        }
+
+        @Override
+        public void endTree(@Nullable NodeRef left, @Nullable NodeRef right) {
+            //
+        }
+
+        @Override
+        public boolean bucket(NodeRef leftParent, NodeRef rightParent, BucketIndex bucketIndex,
+                @Nullable Bucket left, @Nullable Bucket right) {
+            return true;
+        }
+
+        @Override
+        public void endBucket(NodeRef leftParent, NodeRef rightParent, BucketIndex bucketIndex,
+                @Nullable Bucket left, @Nullable Bucket right) {
+            //
+        }
+
+    }
+
     /**
      * Template class for consumer decorators, forwards all event calls to the provided consumer;
      * concrete subclasses shall override the event methods of their interest.

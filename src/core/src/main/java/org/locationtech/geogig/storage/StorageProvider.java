@@ -7,9 +7,11 @@
  * Contributors:
  * Gabriel Roldan (Boundless) - initial implementation
  */
-package org.locationtech.geogig.di;
+package org.locationtech.geogig.storage;
 
 import java.util.ServiceLoader;
+
+import org.locationtech.geogig.di.VersionedFormat;
 
 import com.google.common.collect.ImmutableList;
 

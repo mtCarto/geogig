@@ -9,6 +9,8 @@
  */
 package org.locationtech.geogig.di;
 
+import org.locationtech.geogig.storage.StorageProvider;
+
 import com.google.common.base.Optional;
 
 public final class PluginDefaults {

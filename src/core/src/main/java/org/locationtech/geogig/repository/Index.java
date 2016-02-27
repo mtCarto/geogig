@@ -24,6 +24,7 @@ import org.locationtech.geogig.api.Ref;
 import org.locationtech.geogig.api.RevObject.TYPE;
 import org.locationtech.geogig.api.RevTree;
 import org.locationtech.geogig.api.RevTreeBuilder;
+import org.locationtech.geogig.api.TreeBuilder;
 import org.locationtech.geogig.api.plumbing.DiffCount;
 import org.locationtech.geogig.api.plumbing.DiffIndex;
 import org.locationtech.geogig.api.plumbing.FindOrCreateSubtree;
@@ -116,19 +117,6 @@ public class Index implements StagingArea {
             }
         }
         return stageTree;
-    }
-
-    /**
-     * @return a supplier for the index.
-     */
-    private Supplier<RevTreeBuilder> getTreeSupplier() {
-        Supplier<RevTreeBuilder> supplier = new Supplier<RevTreeBuilder>() {
-            @Override
-            public RevTreeBuilder get() {
-                return new RevTreeBuilder(context.objectDatabase(), getTree());
-            }
-        };
-        return Suppliers.memoize(supplier);
     }
 
     /**
@@ -237,8 +225,8 @@ public class Index implements StagingArea {
                 newRootTree = changedTree.getId();
             } else {
                 // parentMetadataId = parentMetadataId == null ?
-                Supplier<RevTreeBuilder> rootTreeSupplier = getTreeSupplier();
-                newRootTree = context.command(WriteBack.class).setAncestor(rootTreeSupplier)
+                RevTree rootTree = getTree();
+                newRootTree = context.command(WriteBack.class).setAncestor(rootTree)
                         .setChildPath(changedTreePath).setMetadataId(parentMetadataId)
                         .setTree(changedTree).call();
             }
@@ -271,8 +259,8 @@ public class Index implements StagingArea {
                     parentMetadataId = parentRef.get().getMetadataId();
                 }
 
-                parentBuilder = new RevTreeBuilder(context.objectDatabase(),
-                        context.command(FindOrCreateSubtree.class)
+                parentBuilder = new RevTreeBuilder(context.objectDatabase(), context
+                        .command(FindOrCreateSubtree.class)
                         .setParent(Suppliers.ofInstance(Optional.of(getTree())))
                         .setChildPath(parentPath).call());
             }

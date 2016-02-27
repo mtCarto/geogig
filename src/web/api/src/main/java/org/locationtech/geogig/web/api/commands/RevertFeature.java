@@ -210,8 +210,7 @@ public class RevertFeature extends AbstractWebAPICommand {
         if (!delete) {
             treeBuilder.put(node.get().getNode());
         }
-        ObjectId newTreeId = geogig.command(WriteBack.class)
-                .setAncestor(new RevTreeBuilder(geogig.objectDatabase(), newTree.get()))
+        ObjectId newTreeId = geogig.command(WriteBack.class).setAncestor(newTree.get())
                 .setChildPath(node.get().getParentPath()).setTree(treeBuilder.build())
                 .setMetadataId(metadataId).call();
 

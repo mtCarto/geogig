@@ -113,6 +113,12 @@
       <artifactId>compress-lzf</artifactId>
     </dependency>
 
+    <dependency>
+      <!-- for some temporary storage needs -->
+      <groupId>org.mapdb</groupId>
+      <artifactId>mapdb</artifactId>
+    </dependency>
+
     <!-- Test scope dependencies -->
     <dependency>
       <groupId>junit</groupId>

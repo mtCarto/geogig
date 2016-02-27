@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.locationtech.geogig.api.Node;
 import org.locationtech.geogig.api.ObjectId;
 import org.locationtech.geogig.api.RevObject.TYPE;
+import org.locationtech.geogig.api.RevTree;
 import org.locationtech.geogig.api.RevTreeBuilder;
 import org.locationtech.geogig.storage.NodeStorageOrder;
 import org.locationtech.geogig.storage.ObjectDatabase;
@@ -36,7 +37,7 @@ public class RevTreeBuilderPerformanceTest extends RepositoryTestCase {
 
     private static final ObjectId FAKE_ID = ObjectId.forString("fake");
 
-    private static final int numNodes = 512 * 32;
+    private static final int numNodes = 50_000;
 
     private static Iterable<Node> nodes;
 
@@ -112,10 +113,11 @@ public class RevTreeBuilderPerformanceTest extends RepositoryTestCase {
             createTree(partition, builder, false);
         }
         System.err.println("Calling RevTreeBuilder.build()...");
-        builder.build();
+        RevTree tree = builder.build();
         sw.stop();
-        System.err.printf("-- Created tree with %d sorted partitioned size in %s\n", partitionSize,
-                sw);
+        assertEquals(numNodes, tree.size());
+        System.err.printf("-- Created tree with %,d sorted partitioned size in %s\n",
+                partitionSize, sw);
     }
 
     private static Node createNode(int i) {
@@ -130,7 +132,7 @@ public class RevTreeBuilderPerformanceTest extends RepositoryTestCase {
     private RevTreeBuilder createTree(final Iterable<Node> nodes, final RevTreeBuilder b,
             final boolean buildTree) {
         if (buildTree) {
-            System.err.printf("Creating treee with %d nodes...", numNodes);
+            System.err.printf("Creating treee with %,d nodes...", numNodes);
         }
         Stopwatch sw = Stopwatch.createStarted();
         for (Node n : nodes) {

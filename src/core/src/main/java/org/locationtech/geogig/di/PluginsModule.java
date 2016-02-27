@@ -21,6 +21,7 @@ import org.locationtech.geogig.storage.ConfigDatabase;
 import org.locationtech.geogig.storage.GraphDatabase;
 import org.locationtech.geogig.storage.ObjectDatabase;
 import org.locationtech.geogig.storage.RefDatabase;
+import org.locationtech.geogig.storage.StorageProvider;
 import org.locationtech.geogig.storage.fs.IniFileConfigDatabase;
 
 import com.google.common.base.Optional;

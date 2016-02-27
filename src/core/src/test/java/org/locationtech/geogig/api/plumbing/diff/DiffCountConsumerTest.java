@@ -119,21 +119,22 @@ public class DiffCountConsumerTest extends Assert {
     public void testChildrenChildren() {
         RevTreeBuilder builder = new RevTreeBuilder(odb, childrenFeatureTree);
         RevTree changed = builder.remove("3").build();
-        odb.put(changed);
+
         assertEquals(1, count(childrenFeatureTree, changed).featureCount());
         assertEquals(1, count(changed, childrenFeatureTree).featureCount());
 
+        builder = new RevTreeBuilder(odb, changed);
         changed = builder.put(
                 Node.create("new", FAKE_FEATURE_ID, ObjectId.NULL, TYPE.FEATURE, null)).build();
-        odb.put(changed);
 
         assertEquals(2, count(childrenFeatureTree, changed).featureCount());
         assertEquals(2, count(changed, childrenFeatureTree).featureCount());
 
+        builder = new RevTreeBuilder(odb, changed);
         changed = builder.put(
                 Node.create("1", FAKE_FEATURE_ID_CHANGED, ObjectId.NULL, TYPE.FEATURE, null))
                 .build();
-        odb.put(changed);
+
         assertEquals(3, count(childrenFeatureTree, changed).featureCount());
         assertEquals(3, count(changed, childrenFeatureTree).featureCount());
     }

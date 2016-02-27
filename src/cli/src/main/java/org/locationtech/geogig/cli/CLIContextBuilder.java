@@ -15,13 +15,13 @@ import org.locationtech.geogig.di.GeogigModule;
 import org.locationtech.geogig.di.HintsModule;
 import org.locationtech.geogig.di.PluginDefaults;
 import org.locationtech.geogig.di.PluginsModule;
-import org.locationtech.geogig.di.StorageProvider;
 import org.locationtech.geogig.di.VersionedFormat;
 import org.locationtech.geogig.di.caching.CachingModule;
 import org.locationtech.geogig.repository.Hints;
 import org.locationtech.geogig.storage.GraphDatabase;
 import org.locationtech.geogig.storage.ObjectDatabase;
 import org.locationtech.geogig.storage.RefDatabase;
+import org.locationtech.geogig.storage.StorageProvider;
 import org.locationtech.geogig.storage.bdbje.JEStorageProviderV02;
 
 import com.google.inject.AbstractModule;

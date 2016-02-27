@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableSortedMap;
  */
 public interface RevTree extends RevObject {
 
-    public static final RevTree EMPTY = RevTreeBuilder.empty();
+    public static final RevTree EMPTY = RevTreeImpl.createLeafTree();
 
     public static final ObjectId EMPTY_TREE_ID = EMPTY.getId();
 
@@ -47,8 +47,6 @@ public interface RevTree extends RevObject {
     public Optional<ImmutableSortedMap<Integer, Bucket>> buckets();
 
     /**
-     * Precondition: {@code !buckets().isPresent()}
-     * 
      * @return an iterator over the trees and feature children collections, in the prescribed node
      *         storage {@link NodeStorageOrder order}
      */

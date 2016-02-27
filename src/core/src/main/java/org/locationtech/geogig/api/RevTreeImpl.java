@@ -9,13 +9,16 @@
  */
 package org.locationtech.geogig.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.Nullable;
+import org.locationtech.geogig.api.plumbing.HashObject;
 import org.locationtech.geogig.storage.NodePathStorageOrder;
 import org.locationtech.geogig.storage.NodeStorageOrder;
-import org.locationtech.geogig.storage.ObjectDatabase;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -30,12 +33,12 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
 
     private static final class LeafTree extends RevTreeImpl {
 
-        private final Optional<ImmutableList<Node>> features;
+        private @Nullable final ImmutableList<Node> features;
 
-        private final Optional<ImmutableList<Node>> trees;
+        private @Nullable final ImmutableList<Node> trees;
 
         public LeafTree(final ObjectId id, final long size,
-                final Optional<ImmutableList<Node>> features, Optional<ImmutableList<Node>> trees) {
+                final @Nullable ImmutableList<Node> features, @Nullable ImmutableList<Node> trees) {
             super(id, size);
             this.features = features;
             this.trees = trees;
@@ -43,51 +46,100 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
 
         @Override
         public Optional<ImmutableList<Node>> features() {
-            return features;
+            return Optional.fromNullable(features);
         }
 
         @Override
         public Optional<ImmutableList<Node>> trees() {
-            return trees;
+            return Optional.fromNullable(trees);
         }
 
         @Override
         public int numTrees() {
-            return trees.isPresent() ? trees.get().size() : 0;
+            return trees != null ? trees.size() : 0;
         }
 
         @Override
         public final boolean isEmpty() {
-            return features.isPresent() ? features.get().isEmpty() : (trees.isPresent() ? trees
-                    .get().isEmpty() : true);
+            return (features == null || features.isEmpty()) && (trees == null || trees.isEmpty());
         }
     }
 
     private static final class NodeTree extends RevTreeImpl {
 
-        private final Optional<ImmutableSortedMap<Integer, Bucket>> buckets;
+        private final @Nullable ImmutableSortedMap<Integer, Bucket> buckets;
 
         private final int childTreeCount;
 
         public NodeTree(final ObjectId id, final long size, final int childTreeCount,
                 final ImmutableSortedMap<Integer, Bucket> innerTrees) {
             super(id, size);
+            checkNotNull(innerTrees);
             this.childTreeCount = childTreeCount;
             if (innerTrees.isEmpty()) {
-                this.buckets = Optional.absent();
+                this.buckets = null;
             } else {
-                this.buckets = Optional.of(innerTrees);
+                this.buckets = innerTrees;
             }
         }
 
         @Override
         public Optional<ImmutableSortedMap<Integer, Bucket>> buckets() {
-            return buckets;
+            return Optional.fromNullable(buckets);
         }
 
         @Override
         public final boolean isEmpty() {
-            return buckets().isPresent() ? buckets().get().isEmpty() : true;
+            return buckets == null || buckets.isEmpty();
+        }
+
+        @Override
+        public int numTrees() {
+            return childTreeCount;
+        }
+    }
+
+    private static final class MixedTree extends RevTreeImpl {
+
+        private final int childTreeCount;
+
+        private @Nullable final ImmutableList<Node> trees;
+
+        private @Nullable final ImmutableList<Node> features;
+
+        private @Nullable final ImmutableSortedMap<Integer, Bucket> buckets;
+
+        public MixedTree(final ObjectId id, final long size, final int childTreeCount,
+                @Nullable final ImmutableList<Node> trees,
+                @Nullable final ImmutableList<Node> features,
+                @Nullable final ImmutableSortedMap<Integer, Bucket> buckets) {
+            super(id, size);
+            this.childTreeCount = childTreeCount;
+
+            this.trees = trees;
+            this.features = features;
+            this.buckets = buckets;
+        }
+
+        @Override
+        public Optional<ImmutableList<Node>> features() {
+            return Optional.fromNullable(features);
+        }
+
+        @Override
+        public Optional<ImmutableList<Node>> trees() {
+            return Optional.fromNullable(trees);
+        }
+
+        @Override
+        public Optional<ImmutableSortedMap<Integer, Bucket>> buckets() {
+            return Optional.fromNullable(buckets);
+        }
+
+        @Override
+        public final boolean isEmpty() {
+            return (trees == null || trees.isEmpty()) && (features == null || features.isEmpty())
+                    && (buckets == null || buckets.isEmpty());
         }
 
         @Override
@@ -123,6 +175,13 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         return Optional.absent();
     }
 
+    public static RevTreeImpl createLeafTree(long size, ImmutableList<Node> features,
+            ImmutableList<Node> trees) {
+
+        ObjectId id = HashObject.hashTree(trees, features, null);
+        return createLeafTree(id, size, features, trees);
+    }
+
     public static RevTreeImpl createLeafTree(ObjectId id, long size, ImmutableList<Node> features,
             ImmutableList<Node> trees) {
 
@@ -130,15 +189,7 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         Preconditions.checkNotNull(features);
         Preconditions.checkNotNull(trees);
 
-        Optional<ImmutableList<Node>> f = Optional.absent();
-        Optional<ImmutableList<Node>> t = Optional.absent();
-        if (!features.isEmpty()) {
-            f = Optional.of(features);
-        }
-        if (!trees.isEmpty()) {
-            t = Optional.of(trees);
-        }
-        return new LeafTree(id, size, f, t);
+        return new LeafTree(id, size, features, trees);
     }
 
     private static final NodeStorageOrder ordering = new NodeStorageOrder();
@@ -160,12 +211,54 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         return createLeafTree(id, size, featuresList, treesList);
     }
 
+    public static RevTreeImpl createNodeTree(final long size, final int childTreeCount,
+            final Map<Integer, Bucket> bucketTrees) {
+
+        Preconditions.checkNotNull(bucketTrees);
+
+        ImmutableSortedMap<Integer, Bucket> innerTrees = ImmutableSortedMap.copyOf(bucketTrees);
+
+        ImmutableList<Node> trees = null;
+        ImmutableList<Node> features = null;
+        ImmutableSortedMap<Integer, Bucket> buckets = ImmutableSortedMap.copyOf(bucketTrees);
+
+        final ObjectId id = HashObject.hashTree(trees, features, buckets);
+
+        return new NodeTree(id, size, childTreeCount, innerTrees);
+    }
+
+    public static RevTree create(final long size, final int childTreeCount,
+            @Nullable ImmutableList<Node> trees, @Nullable ImmutableList<Node> features,
+            @Nullable ImmutableSortedMap<Integer, Bucket> buckets) {
+
+        final ObjectId id = HashObject.hashTree(trees, features, buckets);
+        return create(id, size, childTreeCount, trees, features, buckets);
+    }
+
+    public static RevTree create(final ObjectId id, final long size, final int childTreeCount,
+            @Nullable ImmutableList<Node> trees, @Nullable ImmutableList<Node> features,
+            @Nullable ImmutableSortedMap<Integer, Bucket> buckets) {
+
+        if (RevTree.EMPTY_TREE_ID.equals(id)) {
+            return RevTree.EMPTY;
+        }
+
+        if (buckets == null || buckets.isEmpty()) {
+            return new LeafTree(id, size, features, trees);
+        }
+        if ((features == null || features.isEmpty()) && (trees == null || trees.isEmpty())) {
+            return new NodeTree(id, size, childTreeCount, buckets);
+        }
+        return new MixedTree(id, size, childTreeCount, trees, features, buckets);
+    }
+
     public static RevTreeImpl createNodeTree(final ObjectId id, final long size,
             final int childTreeCount, final Map<Integer, Bucket> bucketTrees) {
 
         Preconditions.checkNotNull(id);
         Preconditions.checkNotNull(bucketTrees);
-        Preconditions.checkArgument(bucketTrees.size() <= NodePathStorageOrder.maxBucketsForLevel(0));
+        Preconditions.checkArgument(bucketTrees.size() <= NodePathStorageOrder
+                .maxBucketsForLevel(0));
 
         ImmutableSortedMap<Integer, Bucket> innerTrees = ImmutableSortedMap.copyOf(bucketTrees);
 
@@ -176,18 +269,9 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         if (unidentified.buckets().isPresent()) {
             return new NodeTree(id, size, unidentified.numTrees(), unidentified.buckets().get());
         }
-        final Optional<ImmutableList<Node>> features;
-        if (unidentified.features().isPresent()) {
-            features = Optional.of(unidentified.features().get());
-        } else {
-            features = Optional.absent();
-        }
-        final Optional<ImmutableList<Node>> trees;
-        if (unidentified.trees().isPresent()) {
-            trees = Optional.of(unidentified.trees().get());
-        } else {
-            trees = Optional.absent();
-        }
+        final ImmutableList<Node> features = unidentified.features().orNull();
+        final ImmutableList<Node> trees = unidentified.trees().orNull();
+
         return new LeafTree(id, size, features, trees);
     }
 
@@ -198,7 +282,6 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
 
     @Override
     public Iterator<Node> children() {
-        Preconditions.checkState(!buckets().isPresent());
         ImmutableList<Node> trees = trees().or(ImmutableList.<Node> of());
         ImmutableList<Node> features = features().or(ImmutableList.<Node> of());
         if (trees.isEmpty()) {
@@ -236,7 +319,7 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         builder.append("Tree[");
         builder.append(getId().toString());
         builder.append("; size=");
-        builder.append(size);
+        builder.append(String.format("%,d", size));
         builder.append("; subtrees=");
         builder.append(nSubtrees);
         builder.append(", buckets=");
@@ -245,5 +328,17 @@ public abstract class RevTreeImpl extends AbstractRevObject implements RevTree {
         builder.append(nFeatures);
         builder.append(']');
         return builder.toString();
+    }
+
+    /**
+     * @return a new instance of a properly "named" empty tree (as in with a proper object id after
+     *         applying {@link HashObject})
+     */
+    public static RevTree createLeafTree() {
+        ImmutableList<Node> features = ImmutableList.of();
+        ImmutableList<Node> trees = ImmutableList.of();
+        ImmutableSortedMap<Integer, Bucket> buckets = ImmutableSortedMap.of();
+        ObjectId emptyId = HashObject.hashTree(trees, features, buckets);
+        return RevTreeImpl.createLeafTree(emptyId, 0, features, trees);
     }
 }

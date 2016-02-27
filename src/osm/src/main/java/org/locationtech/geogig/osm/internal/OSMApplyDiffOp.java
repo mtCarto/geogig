@@ -25,9 +25,9 @@ import org.locationtech.geogig.api.Platform;
 import org.locationtech.geogig.api.ProgressListener;
 import org.locationtech.geogig.api.SubProgressListener;
 import org.locationtech.geogig.api.plumbing.FindTreeChild;
-import org.locationtech.geogig.osm.internal.coordcache.MapdbPointCache;
 import org.locationtech.geogig.osm.internal.coordcache.MappedPointCache;
 import org.locationtech.geogig.osm.internal.coordcache.PointCache;
+import org.locationtech.geogig.osm.internal.coordcache.SparseMappedPointCache;
 import org.locationtech.geogig.repository.FeatureToDelete;
 import org.locationtech.geogig.repository.WorkingTree;
 import org.opengis.feature.Feature;
@@ -194,7 +194,7 @@ public class OSMApplyDiffOp extends AbstractGeoGigOp<Optional<OSMReport>> {
             this.progressListener = progressListener;
             this.latestChangeset = 0;
             this.latestTimestamp = 0;
-            this.pointCache = new MappedPointCache(platform);// new MapdbPointCache(platform);
+            this.pointCache = new SparseMappedPointCache(platform);
             Optional<NodeRef> waysNodeRef = cmdLocator.command(FindTreeChild.class)
                     .setChildPath(OSMUtils.WAY_TYPE_NAME).setParent(workTree.getTree()).call();
             Optional<NodeRef> nodesNodeRef = cmdLocator.command(FindTreeChild.class)

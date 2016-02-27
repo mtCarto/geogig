@@ -37,7 +37,6 @@ import org.locationtech.geogig.api.RevObject.TYPE;
 import org.locationtech.geogig.api.RevTree;
 import org.locationtech.geogig.api.RevTreeBuilder;
 import org.locationtech.geogig.api.TestPlatform;
-import org.locationtech.geogig.api.plumbing.RevObjectParse;
 import org.locationtech.geogig.api.plumbing.WriteBack;
 import org.locationtech.geogig.di.GeogigModule;
 import org.locationtech.geogig.di.HintsModule;
@@ -79,17 +78,15 @@ public class DepthSearchTest {
         odb = fakeRepo.objectDatabase();
         search = new DepthSearch(odb);
 
-        RevTreeBuilder root = new RevTreeBuilder(odb);
+        RevTree root = RevTree.EMPTY;
         root = addTree(root, "path/to/tree1", "node11", "node12", "node13");
         root = addTree(root, "path/to/tree2", "node21", "node22", "node23");
         root = addTree(root, "tree3", "node31", "node32", "node33");
-        RevTree rootTree = root.build();
-        odb.put(rootTree);
-        rootTreeId = rootTree.getId();
+
+        rootTreeId = root.getId();
     }
 
-    private RevTreeBuilder addTree(RevTreeBuilder root, final String treePath,
-            String... singleNodeNames) {
+    private RevTree addTree(RevTree root, final String treePath, String... singleNodeNames) {
 
         Context mockInjector = mock(Context.class);
         when(mockInjector.objectDatabase()).thenReturn(odb);
@@ -110,8 +107,8 @@ public class DepthSearchTest {
                 .setChildPath(treePath).setTree(subtree).setMetadataId(fakeTreeMetadataId);
         ObjectId newRootId = writeBack.call();
 
-        return new RevTreeBuilder(odb, fakeGeogig.command(RevObjectParse.class)
-                .setObjectId(newRootId).call(RevTree.class).get());
+        RevTree newRoot = odb.getTree(newRootId);
+        return newRoot;
     }
 
     @Test

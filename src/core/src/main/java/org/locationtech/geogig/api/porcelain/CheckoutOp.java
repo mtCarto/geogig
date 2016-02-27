@@ -173,12 +173,13 @@ public class CheckoutOp extends AbstractGeoGigOp<CheckoutResult> {
                             + "' didn't match a feature in the tree");
 
                     if (node.get().getType() == TYPE.TREE) {
+                        RevTree newRoot;
                         RevTreeBuilder treeBuilder = new RevTreeBuilder(objectDatabase(),
                                 workingTree().getTree());
                         treeBuilder.remove(st);
                         treeBuilder.put(node.get().getNode());
-                        RevTree newRoot = treeBuilder.build();
-                        objectDatabase().put(newRoot);
+                        newRoot = treeBuilder.build();
+
                         workingTree().updateWorkHead(newRoot.getId());
                     } else {
 
@@ -199,11 +200,13 @@ public class CheckoutOp extends AbstractGeoGigOp<CheckoutResult> {
                             treeBuilder = new RevTreeBuilder(objectDatabase());
                         }
                         treeBuilder.put(node.get().getNode());
+
+                        RevTree newTree = treeBuilder.build();
+
                         ObjectId newTreeId = command(WriteBack.class)
-                                .setAncestor(new RevTreeBuilder(objectDatabase(),
-                                        workingTree().getTree()))
-                                .setChildPath(node.get().getParentPath())
-                                .setTree(treeBuilder.build()).setMetadataId(metadataId).call();
+                                .setAncestor(workingTree().getTree())
+                                .setChildPath(node.get().getParentPath()).setTree(newTree)
+                                .setMetadataId(metadataId).call();
                         workingTree().updateWorkHead(newTreeId);
                     }
                 }

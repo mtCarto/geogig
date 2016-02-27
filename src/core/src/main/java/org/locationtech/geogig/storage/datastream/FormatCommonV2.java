@@ -9,7 +9,6 @@
  */
 package org.locationtech.geogig.storage.datastream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Integer.toBinaryString;
 import static org.locationtech.geogig.storage.datastream.Varint.readSignedVarLong;
@@ -27,8 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.geotools.feature.NameImpl;
@@ -221,7 +218,8 @@ public class FormatCommonV2 {
 
         final ImmutableList.Builder<Node> featuresBuilder = new ImmutableList.Builder<Node>();
         final ImmutableList.Builder<Node> treesBuilder = new ImmutableList.Builder<Node>();
-        final SortedMap<Integer, Bucket> buckets = new TreeMap<Integer, Bucket>();
+        final ImmutableSortedMap.Builder<Integer, Bucket> bucketsBuilder = ImmutableSortedMap
+                .naturalOrder();
 
         final int nFeatures = readUnsignedVarInt(in);
         for (int i = 0; i < nFeatures; i++) {
@@ -243,25 +241,18 @@ public class FormatCommonV2 {
         final int nBuckets = readUnsignedVarInt(in);
         for (int i = 0; i < nBuckets; i++) {
             int bucketIndex = readUnsignedVarInt(in);
-            {
-                Integer idx = Integer.valueOf(bucketIndex);
-                checkState(!buckets.containsKey(idx), "duplicate bucket index: %s", idx);
-                // checkState(bucketIndex < RevTree.MAX_BUCKETS, "Illegal bucket index: %s", idx);
-            }
+            Integer idx = Integer.valueOf(bucketIndex);
             Bucket bucket = readBucketBody(in);
-            buckets.put(Integer.valueOf(bucketIndex), bucket);
+            bucketsBuilder.put(idx, bucket);
         }
-        checkState(nBuckets == buckets.size(), "expected %s buckets, got %s", nBuckets,
-                buckets.size());
         ImmutableList<Node> trees = treesBuilder.build();
         ImmutableList<Node> features = featuresBuilder.build();
-        checkArgument(buckets.isEmpty() || (trees.isEmpty() && features.isEmpty()),
-                "Tree has mixed buckets and nodes; this is not supported.");
+        ImmutableSortedMap<Integer, Bucket> buckets = bucketsBuilder.build();
 
-        if (trees.isEmpty() && features.isEmpty()) {
-            return RevTreeImpl.createNodeTree(id, size, treeCount, buckets);
-        }
-        return RevTreeImpl.createLeafTree(id, size, features, trees);
+        checkState(nBuckets == buckets.size(), "expected %s buckets, got %s", nBuckets,
+                buckets.size());
+        RevTree tree = RevTreeImpl.create(id, size, treeCount, trees, features, buckets);
+        return tree;
     }
 
     public static DiffEntry readDiff(DataInput in) throws IOException {

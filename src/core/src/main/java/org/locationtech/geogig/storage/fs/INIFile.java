@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +40,8 @@ public abstract class INIFile {
      */
     private long timestamp = 0;
 
+    private WatchService watchService;
+    
     /**
      * Content of the ini file
      */

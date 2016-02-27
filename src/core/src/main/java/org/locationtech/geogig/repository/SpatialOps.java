@@ -10,7 +10,6 @@
 package org.locationtech.geogig.repository;
 
 import java.util.List;
-
 import org.eclipse.jdt.annotation.Nullable;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -85,20 +84,20 @@ public class SpatialOps {
             for (Bucket bucket : tree.buckets().get().values()) {
                 bucket.expand(env);
             }
-        } else {
-            if (tree.trees().isPresent()) {
-                ImmutableList<Node> trees = tree.trees().get();
-                for (int i = 0; i < trees.size(); i++) {
-                    trees.get(i).expand(env);
-                }
-            }
-            if (tree.features().isPresent()) {
-                ImmutableList<Node> trees = tree.features().get();
-                for (int i = 0; i < trees.size(); i++) {
-                    trees.get(i).expand(env);
-                }
+        }
+        if (tree.trees().isPresent()) {
+            ImmutableList<Node> trees = tree.trees().get();
+            for (int i = 0; i < trees.size(); i++) {
+                trees.get(i).expand(env);
             }
         }
+        if (tree.features().isPresent()) {
+            ImmutableList<Node> trees = tree.features().get();
+            for (int i = 0; i < trees.size(); i++) {
+                trees.get(i).expand(env);
+            }
+        }
+
         return env;
     }
 

@@ -101,7 +101,7 @@ public final class NodePathStorageOrder extends Ordering<String> implements Seri
 
     private static final long serialVersionUID = -685759544293388523L;
 
-    private static final FNV1a64bitHash hashOrder = new FNV1a64bitHash();
+    public static final FNV1a64bitHash hashOrder = new FNV1a64bitHash();
 
     public static final NodePathStorageOrder INSTANCE = new NodePathStorageOrder();
     
@@ -187,13 +187,17 @@ public final class NodePathStorageOrder extends Ordering<String> implements Seri
     public Integer bucket(final String nodeName, final int depthIndex) {
 
         final int byteN = hashOrder.byteN(nodeName, depthIndex);
+        return Integer.valueOf(bucket(byteN, depthIndex));
+    }
+
+    private int bucket(final int byteN, final int depthIndex) {
         Preconditions.checkState(byteN >= 0);
         Preconditions.checkState(byteN < 256);
 
         final int maxBuckets = NodePathStorageOrder.maxBucketsForLevel(depthIndex);
 
         final int bucket = (byteN * maxBuckets) / 256;
-        return Integer.valueOf(bucket);
+        return bucket;
     }
 
     /**
@@ -224,7 +228,7 @@ public final class NodePathStorageOrder extends Ordering<String> implements Seri
      * </code>
      * </pre>
      */
-    private static class FNV1a64bitHash implements Serializable {
+    public static class FNV1a64bitHash implements Serializable {
 
         private static final long serialVersionUID = -1931193743208260766L;
 
@@ -281,11 +285,20 @@ public final class NodePathStorageOrder extends Ordering<String> implements Seri
 
             final long longBits = fnv(nodeName).longValue();
 
+            return byteN(depth, longBits);
+        }
+
+        public int byteN(final int depth, final long longBits) {
             final int displaceBits = 8 * (7 - depth);// how many bits to right shift longBits to get
                                                      // the byte N
 
             final int byteN = ((byte) (longBits >> displaceBits)) & 0xFF;
             return byteN;
         }
+    }
+
+    public int bucket(final UnsignedLong hashCodeLong, final int depthIndex) {
+        int byteN = hashOrder.byteN(depthIndex, hashCodeLong.longValue());
+        return bucket(byteN, depthIndex);
     }
 }

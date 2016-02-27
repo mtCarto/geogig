@@ -25,6 +25,8 @@ public final class NodeStorageOrder extends Ordering<Node> implements Serializab
 
     private static final long serialVersionUID = -2860468212633430368L;
 
+    public static final NodeStorageOrder INSTANCE = new NodeStorageOrder();
+
     private final NodePathStorageOrder nameOrder = new NodePathStorageOrder();
 
     @Override
