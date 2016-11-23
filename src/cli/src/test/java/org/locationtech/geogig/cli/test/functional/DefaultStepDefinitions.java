@@ -481,6 +481,12 @@ public class DefaultStepDefinitions {
         }
     }
 
+    @Given("^I have a local committer")
+    public void I_have_a_local_committer() throws Throwable {
+        localRepo.runCommand(true, "config", "--local", "user.name", "Jane Doe");
+        localRepo.runCommand(true, "config", "--local", "user.email", "JaneDoe@example.com");
+    }
+
     @Given("^I have 6 unstaged features$")
     public void I_have_6_unstaged_features() throws Throwable {
         localRepo.insertFeatures();
