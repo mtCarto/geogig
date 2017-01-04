@@ -45,6 +45,5 @@ public class QuadrantTest {
         assertTrue(eNE.getMinY() == 0.5);
         assertTrue(eNE.getMaxX() == 1);
         assertTrue(eNE.getMaxY() == 1);
-
     }
 }
