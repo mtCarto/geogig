@@ -30,16 +30,17 @@ public class QuadrantTest {
         assertTrue(eSW.getMaxX() == 0.5);
         assertTrue(eSW.getMaxY() == 0.5);
 
+
         assertTrue(eSE.getMinX() == 0.5);
         assertTrue(eSE.getMinY() == 0);
         assertTrue(eSE.getMaxX() == 1);
         assertTrue(eSE.getMaxY() == 0.5);
 
-
         assertTrue(eNW.getMinX() == 0);
         assertTrue(eNW.getMinY() == 0.5);
         assertTrue(eNW.getMaxX() == 0.5);
         assertTrue(eNW.getMaxY() == 1);
+
 
         assertTrue(eNE.getMinX() == 0.5);
         assertTrue(eNE.getMinY() == 0.5);
