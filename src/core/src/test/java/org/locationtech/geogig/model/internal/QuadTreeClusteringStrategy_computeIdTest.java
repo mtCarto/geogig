@@ -9,11 +9,6 @@
  */
 package org.locationtech.geogig.model.internal;
 
-
-import com.google.common.hash.HashCode;
-import com.vividsolutions.jts.geom.Envelope;
-import org.junit.Assert;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -29,6 +24,7 @@ import org.locationtech.geogig.model.RevTree;
 import org.locationtech.geogig.storage.ObjectStore;
 import org.locationtech.geogig.storage.memory.HeapObjectStore;
 
+import com.google.common.hash.HashCode;
 import com.vividsolutions.jts.geom.Envelope;
 
 public class QuadTreeClusteringStrategy_computeIdTest {
@@ -40,7 +36,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
         QuadTreeClusteringStrategy quadStrategy = createQuadStrategy();
 
         Node n = createNode("empty envelope", new Envelope());
-        QuadTreeNodeId quadID = quadStrategy.computeId(n);
+        NodeId quadID = quadStrategy.computeId(n);
         assertNull(quadID);
 
         n = createNode("empty envelope", null);
@@ -54,7 +50,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
         QuadTreeClusteringStrategy quadStrategy = createQuadStrategy();
 
         Node n = createNode("node", MAX_BOUNDS_WGS84, new Quadrant[] {});
-        QuadTreeNodeId quadID = quadStrategy.computeId(n);
+        QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
         assertEquals(0, quadID.quadrantsByDepth().length);
         assertEquals(-1, quadStrategy.bucket(quadID, 0));
@@ -68,7 +64,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
         for (Quadrant q : Quadrant.values()) {
             Quadrant[] location = new Quadrant[] { q };
             Node n = createNode("node", MAX_BOUNDS_WGS84, location);
-            QuadTreeNodeId quadID = quadStrategy.computeId(n);
+            QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
             // should only be one level deep (too big to go further)
             assertEquals(1, quadID.quadrantsByDepth().length);
@@ -85,7 +81,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
             for (Quadrant q2 : Quadrant.values()) {
                 Quadrant[] location = new Quadrant[] { q1, q2 };
                 Node n = createNode("node", MAX_BOUNDS_WGS84, location);
-                QuadTreeNodeId quadID = quadStrategy.computeId(n);
+                QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
                 // should only be 2 levels deep (too big to go further)
                 assertEquals(2, quadID.quadrantsByDepth().length);
@@ -106,7 +102,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
                 for (Quadrant q3 : Quadrant.values()) {
                     Quadrant[] location = new Quadrant[] { q1, q2, q3 };
                     Node n = createNode("node", MAX_BOUNDS_WGS84, location);
-                    QuadTreeNodeId quadID = quadStrategy.computeId(n);
+                    QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
                     // should only be 3 levels deep (too big to go further)
                     assertEquals(3, quadID.quadrantsByDepth().length);
@@ -131,7 +127,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
 
         Quadrant[] location = (Quadrant[]) quads.toArray(new Quadrant[quads.size()]);
         Node n = createNode("node", MAX_BOUNDS_WGS84, location);
-        QuadTreeNodeId quadID = quadStrategy.computeId(n);
+        QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
         assertEquals(quadID.quadrantsByDepth().length, quads.size());
         for (int t = 0; t < quadStrategy.getMaxDepth(); t++) {
@@ -152,7 +148,7 @@ public class QuadTreeClusteringStrategy_computeIdTest {
 
         Quadrant[] location = (Quadrant[]) quads.toArray(new Quadrant[quads.size()]);
         Node n = createNode("node", MAX_BOUNDS_WGS84, location);
-        QuadTreeNodeId quadID = quadStrategy.computeId(n);
+        QuadTreeNodeId quadID = (QuadTreeNodeId) quadStrategy.computeId(n);
 
         assertEquals(quadID.quadrantsByDepth().length, quadStrategy.getMaxDepth());
         for (int t = 0; t < quadStrategy.getMaxDepth(); t++) {
@@ -160,11 +156,11 @@ public class QuadTreeClusteringStrategy_computeIdTest {
         }
     }
 
-
     public static Node createNode(String name, Envelope bounds) {
         HashCode hc = ObjectId.HASH_FUNCTION.hashUnencodedChars(name);
-        Node n =  Node.create(name,  new ObjectId( hc.asBytes()), ObjectId.NULL,RevObject.TYPE.FEATURE, bounds);
-         return n;
+        Node n = Node.create(name, new ObjectId(hc.asBytes()), ObjectId.NULL,
+                RevObject.TYPE.FEATURE, bounds);
+        return n;
     }
 
     // given a list of quandrants, create a node with a bounding box that JUST fits inside
