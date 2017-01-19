@@ -14,13 +14,16 @@ package org.locationtech.geogig.data;
 
 import com.google.common.base.Optional;
 import com.vividsolutions.jts.geom.Envelope;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.logging.Logging;
 import org.locationtech.geogig.model.RevFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.PropertyDescriptor;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -43,6 +46,9 @@ import org.slf4j.LoggerFactory;
 public class EPSGBoundsCalc {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Logging.class);
+
+    private static CoordinateReferenceSystem wgs84 = DefaultGeographicCRS.WGS84;
+    private static CoordinateReferenceSystem wgs84_3d = DefaultGeographicCRS.WGS84_3D;
 
     /**
      * Get the bounds of the desired CRS, uses JTS ReferencedEnvelope transform to properly
@@ -70,20 +76,16 @@ public class EPSGBoundsCalc {
         double maxx = geographicBoundingBox.getEastBoundLongitude();
         double maxy = geographicBoundingBox.getNorthBoundLatitude();
 
-        CoordinateReferenceSystem wgs84LongFirst;
-
-        wgs84LongFirst = CRS.decode("EPSG:4326", true);
         CoordinateOperationFactory coordOpFactory = CRS.getCoordinateOperationFactory(true);
-        CoordinateOperation op = coordOpFactory.createOperation(wgs84LongFirst,crs);
+        CoordinateOperation op = coordOpFactory.createOperation(wgs84,crs);
 
-        ReferencedEnvelope refEnvelope = new ReferencedEnvelope(minx, maxx, miny, maxy, wgs84LongFirst);
+        ReferencedEnvelope refEnvelope = new ReferencedEnvelope(minx, maxx, miny, maxy, wgs84);
         GeneralEnvelope genEnvelope = CRS.transform(op, refEnvelope);
 
         double xmax = genEnvelope.getMaximum(0);
         double ymax = genEnvelope.getMaximum(1);
         double xmin = genEnvelope.getMinimum(0);
         double ymin = genEnvelope.getMinimum(1);
-
         Envelope envelope = new Envelope(xmin, xmax, ymin, ymax);
         return envelope;
     }
@@ -96,14 +98,11 @@ public class EPSGBoundsCalc {
      * CRS is not found
      */
     public Envelope findCode(String refId) throws Exception {
-        Envelope projectionBounds = null;
-        CoordinateReferenceSystem crs = null;
-
         CRSAuthorityFactory authorityFactory = CRS.getAuthorityFactory(true);
 
-        crs = authorityFactory.createCoordinateReferenceSystem(refId);
+        CoordinateReferenceSystem crs = authorityFactory.createCoordinateReferenceSystem(refId);
 
-        projectionBounds = getExtents(crs);
+        Envelope projectionBounds = getExtents(crs);
         return projectionBounds;
     }
 
@@ -114,16 +113,10 @@ public class EPSGBoundsCalc {
      * CRS is not found
      */
     public Envelope getCRSBounds(Optional<RevFeatureType> featureType) throws Exception {
-        Envelope bounds;
-        Set<ReferenceIdentifier> code = null;
+        ReferenceIdentifier code = null;
 
-        List<PropertyDescriptor> descList = featureType.get().descriptors().asList();
-        for (PropertyDescriptor desc : descList) {
-            if (desc instanceof GeometryDescriptor) {
-                code = ((GeometryDescriptor) desc).getCoordinateReferenceSystem().getIdentifiers();
-            }
-        }
-        bounds = findCode(code.toString().replaceAll("[\\[\\]]",""));
+        CoordinateReferenceSystem crs = featureType.get().type().getGeometryDescriptor().getCoordinateReferenceSystem();
+        Envelope bounds = getExtents(crs);
 
         return bounds;
     }

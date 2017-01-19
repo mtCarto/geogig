@@ -21,6 +21,7 @@ import org.locationtech.geogig.porcelain.CommitOp;
 import org.locationtech.geogig.repository.NodeRef;
 import org.locationtech.geogig.test.integration.RepositoryTestCase;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CRSFactory;
 
 public class EPSGBoundsCalcTest extends RepositoryTestCase {
 
@@ -41,7 +42,12 @@ public class EPSGBoundsCalcTest extends RepositoryTestCase {
         Envelope bounds = new EPSGBoundsCalc().getCRSBounds(featureType);
 
         Envelope wgs84 = new Envelope(-180.0, 180.0, -90.0, 90.0);
-        assertEquals(bounds, wgs84);
+        assertEquals(wgs84, bounds);
+    }
+
+    @Test
+    public void compoundCRSTest() throws Exception {
+        CRSFactory factory;
     }
 
     @Test
@@ -65,12 +71,10 @@ public class EPSGBoundsCalcTest extends RepositoryTestCase {
     @Test(expected=NoSuchAuthorityCodeException.class)
     public void googleProjectionTest() throws Exception{
         Envelope bounds = new EPSGBoundsCalc().findCode("EPSG:900913");
-        assertNull(bounds);
     }
 
     @Test(expected=NoSuchAuthorityCodeException.class)
     public void badCodeTest() throws Exception{
         Envelope bounds = new EPSGBoundsCalc().findCode("random stuff!!!");
-        assertNull(bounds);
     }
 }
