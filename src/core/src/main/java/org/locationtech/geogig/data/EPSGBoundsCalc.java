@@ -12,32 +12,23 @@
 
 package org.locationtech.geogig.data;
 
-import com.google.common.base.Optional;
-import com.vividsolutions.jts.geom.Envelope;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.util.logging.Logging;
-import org.locationtech.geogig.model.RevFeatureType;
-import org.opengis.feature.type.GeometryDescriptor;
-import org.opengis.feature.type.PropertyDescriptor;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.ReferenceIdentifier;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.locationtech.geogig.model.RevFeatureType;
 import org.opengis.metadata.extent.Extent;
 import org.opengis.metadata.extent.GeographicBoundingBox;
 import org.opengis.metadata.extent.GeographicExtent;
 import org.opengis.referencing.crs.CRSAuthorityFactory;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.CoordinateOperation;
 import org.opengis.referencing.operation.CoordinateOperationFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
+import com.vividsolutions.jts.geom.Envelope;
 
 /**
  * Given a code string (EPSG:####) or {@link RevFeatureType} , find the CRS bounds and return as an
@@ -45,10 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public class EPSGBoundsCalc {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Logging.class);
-
     private static CoordinateReferenceSystem wgs84 = DefaultGeographicCRS.WGS84;
-    private static CoordinateReferenceSystem wgs84_3d = DefaultGeographicCRS.WGS84_3D;
 
     /**
      * Get the bounds of the desired CRS, uses JTS ReferencedEnvelope transform to properly
@@ -65,8 +53,7 @@ public class EPSGBoundsCalc {
             throw new Exception("No domain of validity provided by CRS definition");
         }
 
-        Collection<? extends GeographicExtent> geographicElements;
-        geographicElements = domainOfValidity.getGeographicElements();
+        Collection<? extends GeographicExtent> geographicElements = domainOfValidity.getGeographicElements();
 
         GeographicExtent geographicExtent = geographicElements.iterator().next();
         GeographicBoundingBox geographicBoundingBox = (GeographicBoundingBox) geographicExtent;
@@ -113,11 +100,8 @@ public class EPSGBoundsCalc {
      * CRS is not found
      */
     public Envelope getCRSBounds(Optional<RevFeatureType> featureType) throws Exception {
-        ReferenceIdentifier code = null;
-
         CoordinateReferenceSystem crs = featureType.get().type().getGeometryDescriptor().getCoordinateReferenceSystem();
-        Envelope bounds = getExtents(crs);
 
-        return bounds;
+        return getExtents(crs);
     }
 }

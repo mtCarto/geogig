@@ -12,16 +12,11 @@
 
 package org.locationtech.geogig.data;
 
-import com.google.common.base.Optional;
-import com.vividsolutions.jts.geom.Envelope;
 import org.junit.Test;
-import org.locationtech.geogig.model.RevFeatureType;
-import org.locationtech.geogig.plumbing.ResolveFeatureType;
-import org.locationtech.geogig.porcelain.CommitOp;
-import org.locationtech.geogig.repository.NodeRef;
 import org.locationtech.geogig.test.integration.RepositoryTestCase;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.crs.CRSFactory;
+
+import com.vividsolutions.jts.geom.Envelope;
 
 public class EPSGBoundsCalcTest extends RepositoryTestCase {
 
@@ -29,25 +24,6 @@ public class EPSGBoundsCalcTest extends RepositoryTestCase {
     protected void setUpInternal() throws Exception {
         injector.configDatabase().put("user.name", "mthompson");
         injector.configDatabase().put("user.email", "mthompson@boundlessgeo.com");
-    }
-
-    @Test
-    public void featureTypeTest() throws Exception {
-        insertAndAdd(points1);
-        geogig.command(CommitOp.class).setMessage("Commit1").call();
-
-        Optional<RevFeatureType> featureType = geogig.command(ResolveFeatureType.class)
-            .setRefSpec("WORK_HEAD:" + NodeRef.appendChild(pointsName, idP1)).call();
-
-        Envelope bounds = new EPSGBoundsCalc().getCRSBounds(featureType);
-
-        Envelope wgs84 = new Envelope(-180.0, 180.0, -90.0, 90.0);
-        assertEquals(wgs84, bounds);
-    }
-
-    @Test
-    public void compoundCRSTest() throws Exception {
-        CRSFactory factory;
     }
 
     @Test
