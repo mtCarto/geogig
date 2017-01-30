@@ -51,7 +51,7 @@ import org.locationtech.geogig.cli.porcelain.Squash;
 import org.locationtech.geogig.cli.porcelain.Status;
 import org.locationtech.geogig.cli.porcelain.Tag;
 import org.locationtech.geogig.cli.porcelain.Version;
-import org.locationtech.geogig.cli.porcelain.index.CreateIndex;
+import org.locationtech.geogig.cli.porcelain.index.IndexCommandProxy;
 
 import com.google.inject.AbstractModule;
 
@@ -135,7 +135,7 @@ public class BuiltinCommandsModule extends AbstractModule implements CLIModule {
         bind(WalkGraph.class);
         bind(Version.class);
         bind(RebuildGraph.class);
-        bind(CreateIndex.class);
+        bind(IndexCommandProxy.class);
     }
 
 }
