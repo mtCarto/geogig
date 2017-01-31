@@ -747,4 +747,47 @@ public class DefaultStepDefinitions {
     String replaceVariables(final String text, Map<String, String> variables) {
         return replaceVariables(text, variables, null);
     }
+
+    @Given("^I create an index on \"([^\"]*)\"$")
+    public void I_create_an_index(String treeSpec) throws Throwable {
+        String[] tree = treeSpec.split("/");
+        localRepo.runCommand(true, "index create --tree " + tree );
+    }
+
+    @Given("^I create an index on \"([^\"]*)\"$ with option \"([^\"]*)\"$ and param \"([^\"]*)\"$")
+    public void I_create_an_index_with_options(String params) throws Throwable {
+        String[] param = params.split("/");
+        localRepo.runCommand(true, "index create --tree " + param[0] + param[1] + param[2]);
+    }
+
+    @When("^I update an index on \"([^\"]*)\"$")
+    public void I_update_an_index(String treeSpec) throws Throwable {
+        String[] tree = treeSpec.split("/");
+        localRepo.runCommand(true, "index update --tree " + tree );
+    }
+
+    @When("^I update an index on \"([^\"]*)\"$ with option \"([^\"]*)\"$ and param \"([^\"]*)\"$")
+    public void I_update_an_index_with_options(String params) throws Throwable {
+        String[] param = params.split("/");
+        localRepo.runCommand(true, "index create --tree " + param[0] + param[1] + param[2]);
+    }
+
+    @When("^I list the index \"([^\"]*)\"$")
+    public void I_list_the_indexes(String treeSpec) throws Throwable {
+        String[] tree = treeSpec.split("/");
+        localRepo.runCommand(true, "index list --tree " + tree);
+    }
+
+    @When("^I rebuild the index on \"([^\"]*)\"$")
+    public void I_rebuild_the_index(String treeSpec) throws Throwable {
+        String[] tree = treeSpec.split("/");
+        localRepo.runCommand(true, "index rebuild --tree " + tree);
+    }
+
+    @When("^I rebuild the index on \"([^\"]*)\"$ for attribute \"([^\"]*)\"$")
+    public void I_rebuild_the_index_for_attrib(String params) throws Throwable {
+        String[] param = params.split("/");
+        localRepo.runCommand(true, "index rebuild --tree " + param[0] + " -a " + param[1]);
+    }
+
 }
